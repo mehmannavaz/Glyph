@@ -24,6 +24,8 @@ SRC = \
     src/irgen.c   \
     src/jit.c     \
     src/ffi.c     \
+    src/stdlib.c  \
+    src/json.c    \
     src/main.c
 
 OBJ = $(SRC:.c=.o)

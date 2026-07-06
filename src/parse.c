@@ -365,20 +365,17 @@ static a_node *parse_block(parser *P) {
             if (!expect(P, T_KW_IN)) { a_free(blk); return NULL; }
             blk->range_start = parse_expr(P);
             if (P->err) { a_free(blk); return NULL; }
-            if (!expect(P, T_KW_DOTDOT)) { a_free(blk); return NULL; }
-            blk->range_end = parse_expr(P);
-            if (P->err) { a_free(blk); return NULL; }
-            if (accept(P, T_KW_THE) || cur(P)->kind == T_IDENT) {
-                /* `step N` — but 'step' isn't a keyword; treat any trailing ident as step
-                 * Actually the spec said `step expr`. We don't have 'step' as a keyword.
-                 * Accept: 'step' identifier followed by expr. */
-                /* The token we just consumed was either T_KW_THE (wrong) or an IDENT.
-                 * We can only support step if the user writes a comma then expr, simpler: */
-                /* FALLBACK: no step support in this version */
-            }
-            if (accept(P, T_COMMA)) {
-                blk->range_step = parse_expr(P);
+            if (accept(P, T_KW_DOTDOT)) {
+                /* range form: for i in a .. b [, step] */
+                blk->range_end = parse_expr(P);
                 if (P->err) { a_free(blk); return NULL; }
+                if (accept(P, T_COMMA)) {
+                    blk->range_step = parse_expr(P);
+                    if (P->err) { a_free(blk); return NULL; }
+                }
+            } else {
+                /* array iteration form: for x in array */
+                blk->range_end = NULL;
             }
             if (!expect(P, T_PAREN_C)) { a_free(blk); return NULL; }
         }

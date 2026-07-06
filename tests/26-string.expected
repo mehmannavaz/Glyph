@@ -1,0 +1,26 @@
+str_find: 6
+str_find_miss: -1
+str_find_from: 9
+str_slice: world
+str_split: ["a", "b", "c"]
+str_join: a-b-c
+str_replace: heLlo
+str_replace_all: a+b+c
+str_trim: hi
+str_upper: HELLO
+str_lower: hello
+str_starts_with: 1
+str_ends_with: 1
+str_contains: 1
+str_repeat: ababab
+str_reverse: olleh
+str_chars: ["a", "b", "c"]
+str_bytes: [65, 66]
+str_from_bytes: Hi
+str_to_int: 42
+str_to_int_hex: 255
+str_to_float: 3.14
+int_to_str: 42
+int_to_str_bin: 1010
+float_to_str: 3.14
+str_format: 42-hi-3.140000

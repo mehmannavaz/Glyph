@@ -1,0 +1,32 @@
+# tests/26-string.glyph — string operations
+# Run: glyph tests/26-string.glyph
+
+(main)
+  s = "hello world"
+
+  print "str_find:", str_find(s, "world")
+  print "str_find_miss:", str_find(s, "xyz")
+  print "str_find_from:", str_find_from(s, "l", 4)
+  print "str_slice:", str_slice(s, 6, 11)
+  print "str_split:", str_split("a,b,c", ",")
+  print "str_join:", str_join(["a", "b", "c"], "-")
+  print "str_replace:", str_replace("hello", "l", "L")
+  print "str_replace_all:", str_replace_all("a-b-c", "-", "+")
+  print "str_trim:", str_trim("  hi  ")
+  print "str_upper:", str_upper("hello")
+  print "str_lower:", str_lower("HELLO")
+  print "str_starts_with:", str_starts_with("hello", "he")
+  print "str_ends_with:", str_ends_with("hello", "lo")
+  print "str_contains:", str_contains("hello", "ell")
+  print "str_repeat:", str_repeat("ab", 3)
+  print "str_reverse:", str_reverse("hello")
+  print "str_chars:", str_chars("abc")
+  print "str_bytes:", str_bytes("AB")
+  print "str_from_bytes:", str_from_bytes([72, 105])
+  print "str_to_int:", str_to_int("42")
+  print "str_to_int_hex:", str_to_int("ff", 16)
+  print "str_to_float:", str_to_float("3.14")
+  print "int_to_str:", int_to_str(42)
+  print "int_to_str_bin:", int_to_str(10, 2)
+  print "float_to_str:", float_to_str(3.14)
+  print "str_format:", str_format("%d-%s-%f", 42, "hi", 3.14)

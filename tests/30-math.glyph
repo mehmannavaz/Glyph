@@ -1,0 +1,34 @@
+# tests/30-math.glyph — math operations
+
+(main)
+  print "math_pi:", math_pi
+  print "math_e:", math_e
+  print "math_sin(0):", math_sin(0.0)
+  print "math_cos(0):", math_cos(0.0)
+  print "math_sqrt(16):", math_sqrt(16.0)
+  print "math_sqrt(2):", math_sqrt(2.0)
+  print "math_pow(2, 10):", math_pow(2, 10)
+  print "math_floor(3.7):", math_floor(3.7)
+  print "math_ceil(3.2):", math_ceil(3.2)
+  print "math_round(3.5):", math_round(3.5)
+  print "math_abs(-5):", math_abs(-5.0)
+  print "math_min(3, 7):", math_min(3, 7)
+  print "math_max(3, 7):", math_max(3, 7)
+  print "math_clamp(15, 0, 10):", math_clamp(15, 0, 10)
+  print "math_log(math_e):", math_log(math_e)
+  print "math_log2(8):", math_log2(8.0)
+  print "math_log10(1000):", math_log10(1000.0)
+  print "math_sign(-5):", math_sign(-5.0)
+  print "math_sign(5):", math_sign(5.0)
+  print "math_sign(0):", math_sign(0.0)
+
+  print ""
+  print "=== random ==="
+  math_random_seed(42)
+  r1 = math_random()
+  r2 = math_random()
+  print "r1 < 1:", r1 < 1.0
+  print "r1 >= 0:", r1 >= 0.0
+  print "r1 != r2:", r1 != r2
+  ri = math_random_int(1, 100)
+  print "random_int in range:", ri >= 1, ri <= 100

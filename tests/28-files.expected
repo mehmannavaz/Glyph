@@ -1,0 +1,15 @@
+write_file bytes: 21
+file_exists: 1
+file_size: 21
+file_is_dir: 0
+read_file: line 1
+line 2
+line 3
+
+file_open ok: 1
+line: line 1
+line: line 2
+line: line 3
+stat size: 21
+stat is_file: 1
+file_exists after unlink: 0

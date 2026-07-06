@@ -1,0 +1,26 @@
+math_pi: 3.14159
+math_e: 2.71828
+math_sin(0): 0.0
+math_cos(0): 1.0
+math_sqrt(16): 4.0
+math_sqrt(2): 1.41421
+math_pow(2, 10): 1024.0
+math_floor(3.7): 3.0
+math_ceil(3.2): 4.0
+math_round(3.5): 4.0
+math_abs(-5): 5.0
+math_min(3, 7): 3
+math_max(3, 7): 7
+math_clamp(15, 0, 10): 10
+math_log(math_e): 1.0
+math_log2(8): 3.0
+math_log10(1000): 3.0
+math_sign(-5): -1.0
+math_sign(5): 1.0
+math_sign(0): 0.0
+
+=== random ===
+r1 < 1: 1
+r1 >= 0: 1
+r1 != r2: 1
+random_int in range: 1 1

@@ -1,0 +1,42 @@
+# examples/head.glyph — print first N lines of files.
+#
+# Usage: glyph examples/head.glyph [-n N] [FILE...]
+# Default N is 10. If no files given, reads stdin.
+
+(main)
+  n = 10
+  start = 1
+  <if argc() >= 2>
+    <if argv()[1] == "-n">
+      n = int(argv()[2])
+      start = 3
+
+  <if argc() <= start>
+    # stdin
+    count = 0
+    (loop)
+      <if count >= n>
+        stop
+      line = readln()
+      <if line == "">
+        stop
+      print line
+      count = count + 1
+  else
+    args = argv()
+    (for i in start..argc())
+      path = args[i]
+      f = file_open(path, "r")
+      <if f == ptr_null()>
+        print "head: cannot open", path
+      else
+        count = 0
+        (loop)
+          <if count >= n>
+            stop
+          line = file_readln(f)
+          <if line == "">
+            stop
+          print line
+          count = count + 1
+        file_close(f)

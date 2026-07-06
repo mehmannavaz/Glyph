@@ -1,0 +1,17 @@
+# examples/echo.glyph — echo arguments.
+#
+# Usage: glyph examples/echo.glyph arg1 arg2 ...
+# Like Unix `echo`.
+
+(main)
+  <if argc() < 2>
+    print ""
+  else
+    args = argv()
+    out = ""
+    (for i in 1..argc())
+      <if out == "">
+        out = args[i]
+      else
+        out = out + " " + args[i]
+    print out

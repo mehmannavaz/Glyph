@@ -1,0 +1,27 @@
+# tests/27-dict.glyph — dict operations
+
+(main)
+  d = dict()
+  dict_set(d, "name", "Alice")
+  dict_set(d, "age", 30)
+  dict_set(d, "city", "NYC")
+
+  print "dict_size:", dict_size(d)
+  print "dict_get name:", dict_get(d, "name")
+  print "dict_get missing:", dict_get(d, "xyz")
+  print "dict_get_or:", dict_get_or(d, "xyz", "default")
+  print "dict_has age:", dict_has(d, "age")
+  print "dict_has missing:", dict_has(d, "xyz")
+  print "dict_keys:", dict_keys(d)
+  print "dict_vals:", dict_vals(d)
+  print "dict_del:", dict_del(d, "city")
+  print "dict_size after del:", dict_size(d)
+  print "dict_has city after del:", dict_has(d, "city")
+
+  print ""
+  print "=== JSON round-trip ==="
+  j = json_stringify(d)
+  print "stringify:", j
+  d2 = json_parse(j)
+  print "re-parse:", d2
+  print "name still:", dict_get(d2, "name")

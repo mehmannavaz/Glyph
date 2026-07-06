@@ -1,0 +1,32 @@
+# examples/grep.glyph — print lines matching a pattern.
+#
+# Usage: glyph examples/grep.glyph pattern file1 file2 ...
+# If no files given, reads stdin.
+#
+# Like Unix `grep` (basic substring search, no regex yet).
+
+(main)
+  <if argc() < 2>
+    print "usage: glyph grep.glyph PATTERN [FILE...]"
+    exit(1)
+
+  pattern = argv()[1]
+
+  <if argc() == 2>
+    # stdin
+    (loop)
+      line = readln()
+      <if line == "">
+        stop
+      <if str_contains(line, pattern)>
+        print line
+  else
+    args = argv()
+    (for i in 2..argc())
+      path = args[i]
+      content = file_read_file(path)
+      lines = str_split(content, "\n")
+      (for j in 0..len(lines))
+        line = lines[j]
+        <if str_contains(line, pattern)>
+          print line

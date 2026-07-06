@@ -1,0 +1,16 @@
+dict_size: 3
+dict_get name: Alice
+dict_get missing: nil
+dict_get_or: default
+dict_has age: 1
+dict_has missing: 0
+dict_keys: ["name", "age", "city"]
+dict_vals: ["Alice", 30, "NYC"]
+dict_del: 1
+dict_size after del: 2
+dict_has city after del: 0
+
+=== JSON round-trip ===
+stringify: {"name":"Alice","age":30}
+re-parse: {"name": "Alice", "age": 30}
+name still: Alice

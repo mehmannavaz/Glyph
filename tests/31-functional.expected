@@ -1,0 +1,19 @@
+arr_map square: [1, 4, 9, 16, 25]
+arr_filter odd: [1, 3, 5]
+arr_reduce add: 15
+arr_reduce concat: abc
+
+=== sort ===
+before: [3, 1, 4, 1, 5, 9, 2, 6]
+after: [1, 1, 2, 3, 4, 5, 6, 9]
+with cmp: [1, 1, 2, 3, 4, 5, 6, 9]
+
+=== call/apply ===
+call square 7: 49
+apply add 3 4: 7
+
+=== arr_push/pop/shift ===
+after push: [1, 2, 3, 4]
+popped: 4 arr: [1, 2, 3]
+shifted: 1 arr: [2, 3]
+after unshift: [0, 2, 3]

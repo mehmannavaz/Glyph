@@ -1,0 +1,24 @@
+# examples/cat.glyph — concatenate files and print to stdout.
+#
+# Usage: glyph examples/cat.glyph file1 file2 ...
+# If no files given, reads stdin.
+#
+# This is the Unix `cat` command, written in Glyph. It composes with
+# pipes: `echo hi | glyph examples/cat.glyph` works.
+
+(main)
+  <if argc() < 2>
+    # No files: copy stdin to stdout.
+    # readln returns "" on EOF, so we use a sentinel check.
+    (loop)
+      line = readln()
+      <if line == "">
+        stop
+      print line
+  else
+    # Concatenate each file argument
+    args = argv()
+    (for i in 1..argc())
+      path = args[i]
+      content = file_read_file(path)
+      write(content)

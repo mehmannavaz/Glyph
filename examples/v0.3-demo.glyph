@@ -1,0 +1,118 @@
+# examples/v0.3-demo.glyph — Glyph v0.3.0 "Plan 9 Release" demo.
+#
+# This program demonstrates every major feature added in v0.3.0.
+# Run: GLYPH_LIB=./lib glyph examples/v0.3-demo.glyph
+
+[is_even x]
+  return x - x / 2 * 2 == 0
+
+[double x]
+  return x * 2
+
+[sum_acc a b]
+  return a + b
+
+[cmp_desc a b]
+  <if a > b>
+    return -1
+  <if a < b>
+    return 1
+  return 0
+
+(main)
+  print "============================================"
+  print "  Glyph v0.3.0 — The Plan 9 Release"
+  print "============================================"
+
+  print ""
+  print "=== STRINGS ==="
+  s = "Hello, World!"
+  print "  str_find:", str_find(s, "World")
+  print "  str_slice:", str_slice(s, 7, 12)
+  print "  str_split:", str_split("a,b,c,d", ",")
+  print "  str_join:", str_join([1, 2, 3], "+")
+  print "  str_upper:", str_upper(s)
+  print "  str_replace_all:", str_replace_all("hello world", "l", "L")
+  print "  str_format:", str_format("pi=%.2f e=%.2f", math_pi, math_e)
+
+  print ""
+  print "=== ARRAYS (with for-in iteration) ==="
+  fruits = ["apple", "banana", "cherry"]
+  print "  iterate:"
+  (for f in fruits)
+    print "   -", f
+  print "  arr_map double:", arr_map([1, 2, 3, 4, 5], "double")
+  print "  arr_filter even:", arr_filter(range(0, 10), "is_even")
+  print "  arr_reduce sum:", arr_reduce([1, 2, 3, 4, 5], "sum_acc", 0)
+
+  print ""
+  print "=== DICTS ==="
+  person = dict()
+  dict_set(person, "name", "Alice")
+  dict_set(person, "age", 30)
+  dict_set(person, "langs", ["Glyph", "Python", "C"])
+  print "  person:", person
+  print "  name:", dict_get(person, "name")
+  print "  keys:", dict_keys(person)
+  print "  size:", dict_size(person)
+
+  print ""
+  print "=== JSON ==="
+  json_str = "{\"x\":1, \"y\":[2,3], \"z\":\"hi\"}"
+  parsed = json_parse(json_str)
+  print "  parsed:", parsed
+  print "  re-stringify:", json_stringify(parsed)
+  print "  pretty:", json_stringify_pretty(parsed)
+
+  print ""
+  print "=== FILES ==="
+  testfile = "/tmp/glyph_v03_demo.txt"
+  file_write_file(testfile, "first line\nsecond line\nthird line\n")
+  print "  file_exists:", file_exists(testfile)
+  print "  file_size:", file_size(testfile)
+  print "  contents:"
+  f = file_open(testfile, "r")
+  (loop)
+    line = file_readln(f)
+    <if type(line) == "nil">
+      stop
+    print "   |", line
+  file_close(f)
+  file_unlink(testfile)
+
+  print ""
+  print "=== MATH ==="
+  print "  math_pi:", math_pi
+  print "  math_sqrt(2):", math_sqrt(2.0)
+  print "  math_pow(2, 10):", math_pow(2, 10)
+  print "  math_floor(3.7):", math_floor(3.7)
+  math_random_seed(42)
+  print "  random:", math_random()
+
+  print ""
+  print "=== TIME ==="
+  now = time_now_s()
+  print "  now:", now
+  print "  year:", time_year(now)
+  print "  formatted:", time_format(now, "%Y-%m-%d %H:%M:%S")
+
+  print ""
+  print "=== PROCESS ==="
+  print "  pid:", proc_getpid()
+  print "  cwd:", proc_cwd()
+  print "  HOME:", proc_env("HOME")
+
+  print ""
+  print "=== INLINE LANGUAGES ==="
+  [python]
+    import math
+    print(f"python: sqrt(16) = {math.sqrt(16)}")
+  [bash]
+    echo "bash: $(echo hello | tr a-z A-Z)"
+  [node]
+    console.log("node: " + [1,2,3].reduce((a,b)=>a+b, 0));
+
+  print ""
+  print "============================================"
+  print "  Demo complete. Glyph v0.3.0 ships."
+  print "============================================"

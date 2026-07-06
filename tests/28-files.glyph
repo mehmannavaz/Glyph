@@ -1,0 +1,37 @@
+# tests/28-files.glyph — file I/O operations
+
+(main)
+  path = "/tmp/glyph_test_28.txt"
+
+  # Write a file
+  n = file_write_file(path, "line 1\nline 2\nline 3\n")
+  print "write_file bytes:", n
+
+  # Check it exists
+  print "file_exists:", file_exists(path)
+  print "file_size:", file_size(path)
+  print "file_is_dir:", file_is_dir(path)
+
+  # Read it back
+  content = file_read_file(path)
+  print "read_file:", content
+
+  # Open and read line by line.
+  # file_readln returns nil on EOF.
+  f = file_open(path, "r")
+  print "file_open ok:", f != ptr_null()
+  (loop)
+    line = file_readln(f)
+    <if type(line) == "nil">
+      stop
+    print "line:", line
+  file_close(f)
+
+  # Stat
+  st = file_stat(path)
+  print "stat size:", dict_get(st, "size")
+  print "stat is_file:", dict_get(st, "is_file")
+
+  # Cleanup
+  file_unlink(path)
+  print "file_exists after unlink:", file_exists(path)

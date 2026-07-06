@@ -1,0 +1,25 @@
+parsed: {"name": "Alice", "age": 30, "scores": [10, 20, 30], "active": 1}
+name: Alice
+age: 30
+active: 1
+scores: [10, 20, 30]
+scores[0]: 10
+
+=== stringify ===
+stringify: {"x":1,"z":[1,2,3],"y":"hello"}
+pretty: {
+  "x": 1,
+  "z": [
+    1,
+    2,
+    3
+  ],
+  "y": "hello"
+}
+
+=== primitives ===
+int: 42
+float: 3.1400000000000001
+string: "hi"
+nil: null
+array: [1,"two",3.0]

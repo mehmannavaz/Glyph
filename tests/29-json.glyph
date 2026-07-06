@@ -1,0 +1,29 @@
+# tests/29-json.glyph — JSON parse and stringify
+
+(main)
+  j = "{\"name\":\"Alice\",\"age\":30,\"scores\":[10,20,30],\"active\":true}"
+  v = json_parse(j)
+  print "parsed:", v
+  print "name:", dict_get(v, "name")
+  print "age:", dict_get(v, "age")
+  print "active:", dict_get(v, "active")
+  scores = dict_get(v, "scores")
+  print "scores:", scores
+  print "scores[0]:", scores[0]
+
+  print ""
+  print "=== stringify ==="
+  d = dict()
+  dict_set(d, "x", 1)
+  dict_set(d, "y", "hello")
+  dict_set(d, "z", [1, 2, 3])
+  print "stringify:", json_stringify(d)
+  print "pretty:", json_stringify_pretty(d)
+
+  print ""
+  print "=== primitives ==="
+  print "int:", json_stringify(42)
+  print "float:", json_stringify(3.14)
+  print "string:", json_stringify("hi")
+  print "nil:", json_stringify(nil)
+  print "array:", json_stringify([1, "two", 3.0])

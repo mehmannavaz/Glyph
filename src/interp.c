@@ -190,6 +190,7 @@ static value nb_type(int argc, value *argv) {
         case V_FUNC:   t = "squire"; break;
         case V_NATIVE: t = "native"; break;
         case V_PTR:    t = "ptr"; break;
+        case V_DICT:   t = "dict"; break;
     }
     return v_str(t);
 }
@@ -910,6 +911,156 @@ void interp_install_builtins(interp *it) {
     env_set_local(it->globals, "lang_eval",    v_native(ffi_nb_lang_eval()));
     env_set_local(it->globals, "lang_call",    v_native(ffi_nb_lang_call()));
     env_set_local(it->globals, "lang_list",    v_native(ffi_nb_lang_list()));
+
+    /* ────────────────────────────────────────────────────────────────
+     * Standard library (src/stdlib.c) — v0.3.0 "Plan 9 Release"
+     * ──────────────────────────────────────────────────────────────── */
+
+    /* Strings */
+    env_set_local(it->globals, "str_find",         v_native(stdlib_str_find()));
+    env_set_local(it->globals, "str_find_from",    v_native(stdlib_str_find_from()));
+    env_set_local(it->globals, "str_slice",        v_native(stdlib_str_slice()));
+    env_set_local(it->globals, "str_split",        v_native(stdlib_str_split()));
+    env_set_local(it->globals, "str_join",         v_native(stdlib_str_join()));
+    env_set_local(it->globals, "str_replace",      v_native(stdlib_str_replace()));
+    env_set_local(it->globals, "str_replace_all",  v_native(stdlib_str_replace_all()));
+    env_set_local(it->globals, "str_trim",         v_native(stdlib_str_trim()));
+    env_set_local(it->globals, "str_trim_left",    v_native(stdlib_str_trim_left()));
+    env_set_local(it->globals, "str_trim_right",   v_native(stdlib_str_trim_right()));
+    env_set_local(it->globals, "str_upper",        v_native(stdlib_str_upper()));
+    env_set_local(it->globals, "str_lower",        v_native(stdlib_str_lower()));
+    env_set_local(it->globals, "str_starts_with",  v_native(stdlib_str_starts_with()));
+    env_set_local(it->globals, "str_ends_with",    v_native(stdlib_str_ends_with()));
+    env_set_local(it->globals, "str_contains",     v_native(stdlib_str_contains()));
+    env_set_local(it->globals, "str_repeat",       v_native(stdlib_str_repeat()));
+    env_set_local(it->globals, "str_reverse",      v_native(stdlib_str_reverse()));
+    env_set_local(it->globals, "str_chars",        v_native(stdlib_str_chars()));
+    env_set_local(it->globals, "str_bytes",        v_native(stdlib_str_bytes()));
+    env_set_local(it->globals, "str_from_bytes",   v_native(stdlib_str_from_bytes()));
+    env_set_local(it->globals, "str_to_int",       v_native(stdlib_str_to_int()));
+    env_set_local(it->globals, "str_to_float",     v_native(stdlib_str_to_float()));
+    env_set_local(it->globals, "int_to_str",       v_native(stdlib_int_to_str()));
+    env_set_local(it->globals, "float_to_str",     v_native(stdlib_float_to_str()));
+    env_set_local(it->globals, "str_format",       v_native(stdlib_str_format()));
+
+    /* Arrays */
+    env_set_local(it->globals, "arr_push",     v_native(stdlib_arr_push()));
+    env_set_local(it->globals, "arr_pop",      v_native(stdlib_arr_pop()));
+    env_set_local(it->globals, "arr_shift",    v_native(stdlib_arr_shift()));
+    env_set_local(it->globals, "arr_unshift",  v_native(stdlib_arr_unshift()));
+    env_set_local(it->globals, "arr_map",      v_native(stdlib_arr_map()));
+    env_set_local(it->globals, "arr_filter",   v_native(stdlib_arr_filter()));
+    env_set_local(it->globals, "arr_reduce",   v_native(stdlib_arr_reduce()));
+    env_set_local(it->globals, "arr_sort",     v_native(stdlib_arr_sort()));
+    env_set_local(it->globals, "arr_reverse",  v_native(stdlib_arr_reverse()));
+    env_set_local(it->globals, "arr_concat",   v_native(stdlib_arr_concat()));
+    env_set_local(it->globals, "arr_slice",    v_native(stdlib_arr_slice()));
+    env_set_local(it->globals, "arr_find",     v_native(stdlib_arr_find()));
+    env_set_local(it->globals, "arr_contains", v_native(stdlib_arr_contains()));
+
+    /* Dicts */
+    env_set_local(it->globals, "dict",         v_native(stdlib_dict_new()));
+    env_set_local(it->globals, "dict_set",     v_native(stdlib_dict_set()));
+    env_set_local(it->globals, "dict_get",     v_native(stdlib_dict_get()));
+    env_set_local(it->globals, "dict_get_or",  v_native(stdlib_dict_get_or()));
+    env_set_local(it->globals, "dict_has",     v_native(stdlib_dict_has()));
+    env_set_local(it->globals, "dict_del",     v_native(stdlib_dict_del()));
+    env_set_local(it->globals, "dict_keys",    v_native(stdlib_dict_keys()));
+    env_set_local(it->globals, "dict_vals",    v_native(stdlib_dict_vals()));
+    env_set_local(it->globals, "dict_size",    v_native(stdlib_dict_size()));
+    env_set_local(it->globals, "dict_clear",   v_native(stdlib_dict_clear()));
+
+    /* Files */
+    env_set_local(it->globals, "file_open",      v_native(stdlib_file_open()));
+    env_set_local(it->globals, "file_close",     v_native(stdlib_file_close()));
+    env_set_local(it->globals, "file_read",      v_native(stdlib_file_read()));
+    env_set_local(it->globals, "file_readln",    v_native(stdlib_file_readln()));
+    env_set_local(it->globals, "file_read_all",  v_native(stdlib_file_read_all()));
+    env_set_local(it->globals, "file_write",     v_native(stdlib_file_write()));
+    env_set_local(it->globals, "file_writeln",   v_native(stdlib_file_writeln()));
+    env_set_local(it->globals, "file_eof",       v_native(stdlib_file_eof()));
+    env_set_local(it->globals, "file_seek",      v_native(stdlib_file_seek()));
+    env_set_local(it->globals, "file_tell",      v_native(stdlib_file_tell()));
+    env_set_local(it->globals, "file_flush",     v_native(stdlib_file_flush()));
+    env_set_local(it->globals, "file_size",      v_native(stdlib_file_size()));
+    env_set_local(it->globals, "file_exists",    v_native(stdlib_file_exists()));
+    env_set_local(it->globals, "file_is_dir",    v_native(stdlib_file_is_dir()));
+    env_set_local(it->globals, "file_stat",      v_native(stdlib_file_stat()));
+    env_set_local(it->globals, "file_mkdir",     v_native(stdlib_file_mkdir()));
+    env_set_local(it->globals, "file_rmdir",     v_native(stdlib_file_rmdir()));
+    env_set_local(it->globals, "file_unlink",    v_native(stdlib_file_unlink()));
+    env_set_local(it->globals, "file_rename",    v_native(stdlib_file_rename()));
+    env_set_local(it->globals, "file_list",      v_native(stdlib_file_list()));
+    env_set_local(it->globals, "file_read_file", v_native(stdlib_file_read_file()));
+    env_set_local(it->globals, "file_write_file",v_native(stdlib_file_write_file()));
+
+    /* Math */
+    env_set_local(it->globals, "math_sin",     v_native(stdlib_math_sin()));
+    env_set_local(it->globals, "math_cos",     v_native(stdlib_math_cos()));
+    env_set_local(it->globals, "math_tan",     v_native(stdlib_math_tan()));
+    env_set_local(it->globals, "math_asin",    v_native(stdlib_math_asin()));
+    env_set_local(it->globals, "math_acos",    v_native(stdlib_math_acos()));
+    env_set_local(it->globals, "math_atan",    v_native(stdlib_math_atan()));
+    env_set_local(it->globals, "math_atan2",   v_native(stdlib_math_atan2()));
+    env_set_local(it->globals, "math_pow",     v_native(stdlib_math_pow()));
+    env_set_local(it->globals, "math_sqrt",    v_native(stdlib_math_sqrt()));
+    env_set_local(it->globals, "math_cbrt",    v_native(stdlib_math_cbrt()));
+    env_set_local(it->globals, "math_log",     v_native(stdlib_math_log()));
+    env_set_local(it->globals, "math_log2",    v_native(stdlib_math_log2()));
+    env_set_local(it->globals, "math_log10",   v_native(stdlib_math_log10()));
+    env_set_local(it->globals, "math_exp",     v_native(stdlib_math_exp()));
+    env_set_local(it->globals, "math_floor",   v_native(stdlib_math_floor()));
+    env_set_local(it->globals, "math_ceil",    v_native(stdlib_math_ceil()));
+    env_set_local(it->globals, "math_round",   v_native(stdlib_math_round()));
+    env_set_local(it->globals, "math_min",     v_native(stdlib_math_min()));
+    env_set_local(it->globals, "math_max",     v_native(stdlib_math_max()));
+    env_set_local(it->globals, "math_abs",     v_native(stdlib_math_abs()));
+    env_set_local(it->globals, "math_sign",    v_native(stdlib_math_sign()));
+    env_set_local(it->globals, "math_clamp",   v_native(stdlib_math_clamp()));
+    env_set_local(it->globals, "math_random",          v_native(stdlib_math_random()));
+    env_set_local(it->globals, "math_random_int",      v_native(stdlib_math_random_int()));
+    env_set_local(it->globals, "math_random_seed",     v_native(stdlib_math_random_seed()));
+    env_set_local(it->globals, "math_pi", v_float(3.14159265358979323846));
+    env_set_local(it->globals, "math_e",  v_float(2.71828182845904523536));
+
+    /* Time */
+    env_set_local(it->globals, "time_now",     v_native(stdlib_time_now()));
+    env_set_local(it->globals, "time_now_s",   v_native(stdlib_time_now_s()));
+    env_set_local(it->globals, "time_now_ns",  v_native(stdlib_time_now_ns()));
+    env_set_local(it->globals, "time_sleep",   v_native(stdlib_time_sleep()));
+    env_set_local(it->globals, "time_sleep_ms",v_native(stdlib_time_sleep_ms()));
+    env_set_local(it->globals, "time_sleep_ns",v_native(stdlib_time_sleep_ns()));
+    env_set_local(it->globals, "time_format",  v_native(stdlib_time_format()));
+    env_set_local(it->globals, "time_year",    v_native(stdlib_time_year()));
+    env_set_local(it->globals, "time_month",   v_native(stdlib_time_month()));
+    env_set_local(it->globals, "time_day",     v_native(stdlib_time_day()));
+    env_set_local(it->globals, "time_hour",    v_native(stdlib_time_hour()));
+    env_set_local(it->globals, "time_min",     v_native(stdlib_time_min()));
+    env_set_local(it->globals, "time_sec",     v_native(stdlib_time_sec()));
+    env_set_local(it->globals, "time_weekday", v_native(stdlib_time_weekday()));
+
+    /* Process */
+    env_set_local(it->globals, "proc_getpid",    v_native(stdlib_proc_getpid()));
+    env_set_local(it->globals, "proc_getppid",   v_native(stdlib_proc_getppid()));
+    env_set_local(it->globals, "proc_env",       v_native(stdlib_proc_env()));
+    env_set_local(it->globals, "proc_env_set",   v_native(stdlib_proc_env_set()));
+    env_set_local(it->globals, "proc_env_unset", v_native(stdlib_proc_env_unset()));
+    env_set_local(it->globals, "proc_env_list",  v_native(stdlib_proc_env_list()));
+    env_set_local(it->globals, "proc_cwd",       v_native(stdlib_proc_cwd()));
+    env_set_local(it->globals, "proc_chdir",     v_native(stdlib_proc_chdir()));
+    env_set_local(it->globals, "proc_fork",      v_native(stdlib_proc_fork()));
+    env_set_local(it->globals, "proc_wait",      v_native(stdlib_proc_wait()));
+    env_set_local(it->globals, "proc_wait_any",  v_native(stdlib_proc_wait_any()));
+    env_set_local(it->globals, "proc_kill",      v_native(stdlib_proc_kill()));
+
+    /* Functional */
+    env_set_local(it->globals, "call",  v_native(stdlib_call()));
+    env_set_local(it->globals, "apply", v_native(stdlib_apply()));
+
+    /* JSON */
+    env_set_local(it->globals, "json_parse",           v_native(json_nb_parse()));
+    env_set_local(it->globals, "json_stringify",       v_native(json_nb_stringify()));
+    env_set_local(it->globals, "json_stringify_pretty",v_native(json_nb_stringify_pretty()));
 }
 
 /* ------------------------------------------------------------------ */
@@ -1557,6 +1708,45 @@ static void exec_block(interp *it, a_node *n, env *parent) {
         case A_BLOCK_LOOP_FOR: {
             value sv = eval_expr(it, n->range_start, e);
             if (it->sig.kind != SIG_NONE) { env_free(e); return; }
+
+            /* Array iteration form: for x in array (range_end is NULL) */
+            if (n->range_end == NULL) {
+                if (sv.kind != V_ARRAY) {
+                    g_set_error("%d:%d: 'for x in' needs an array", n->line, n->col);
+                    it->sig.kind = SIG_ERROR;
+                    env_free(e);
+                    return;
+                }
+                varr *arr = sv.as.arr;
+                jmp_buf brk, cont;
+                jmp_buf *prev_brk = it->loop_jmp, *prev_nxt = it->next_jmp;
+                ctrl_sig prev_sig = it->sig;
+                it->loop_jmp = &brk;
+                it->next_jmp = &cont;
+                it->sig.kind = SIG_NONE;
+                if (setjmp(brk) == 0) {
+                    for (size_t i = 0; i < arr->len; i++) {
+                        env_set_local(e, n->loop_var, v_clone(&arr->items[i]));
+                        env_set_local(e, "iter", v_int((int64_t)(i + 1)));
+                        if (setjmp(cont) == 0) {
+                            for (size_t j = 0; j < n->nchild; j++) {
+                                exec_stmt(it, n->children[j], e);
+                                if (it->sig.kind == SIG_ERROR) goto done_for;
+                                if (it->sig.kind == SIG_STOP)  goto done_for;
+                                if (it->sig.kind == SIG_NEXT)  break;
+                                if (it->sig.kind == SIG_RETURN) goto done_for;
+                            }
+                        }
+                        it->sig.kind = SIG_NONE;
+                    }
+                }
+                it->loop_jmp = prev_brk;
+                it->next_jmp = prev_nxt;
+                it->sig = prev_sig;
+                goto done_for;
+            }
+
+            /* Range form: for i in a .. b [, step] */
             value ev = eval_expr(it, n->range_end, e);
             if (it->sig.kind != SIG_NONE) { env_free(e); return; }
             volatile int64_t step = 1;
@@ -1804,6 +1994,27 @@ static void exec_stmt(interp *it, a_node *n, env *e) {
 /* ------------------------------------------------------------------ */
 
 static interp *g_interp_for_signal = NULL;
+static interp *g_current_interp    = NULL;
+
+/* Public: callable from stdlib.c to invoke a global squire by name. */
+value interp_call_global_squire(const char *name, int argc, value *argv) {
+    if (!g_current_interp) {
+        g_set_error("interp_call_global_squire: no interpreter running");
+        return v_nil();
+    }
+    int found = 0;
+    value fn = env_get(g_current_interp->globals, name, &found);
+    if (!found) {
+        g_set_error("call: no squire named '%s'", name);
+        return v_nil();
+    }
+    if (fn.kind != V_FUNC) {
+        g_set_error("call: '%s' is not a squire", name);
+        return v_nil();
+    }
+    return call_squire(g_current_interp, fn.as.func.def, argc, argv,
+                       fn.as.func.closure);
+}
 
 static void signal_handler(int signo) {
     if (!g_interp_for_signal) return;
@@ -1859,6 +2070,7 @@ static void install_signal_handlers(interp *it) {
 
 g_status interp_run(interp *it, a_node *program) {
     install_signal_handlers(it);
+    g_current_interp = it;
 
     /* first pass: register all top-level squires and triggers */
     for (size_t i = 0; i < program->nchild; i++) {

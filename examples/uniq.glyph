@@ -1,0 +1,41 @@
+# examples/uniq.glyph — remove adjacent duplicate lines.
+#
+# Usage: glyph examples/uniq.glyph [FILE...]
+# If no files given, reads stdin.
+#
+# Like Unix `uniq`. Use with `sort` for full dedup.
+
+(main)
+  prev = ""
+  first = 1
+
+  <if argc() < 2>
+    # stdin
+    (loop)
+      line = readln()
+      <if line == "">
+        stop
+      <if first == 1>
+        print line
+        prev = line
+        first = 0
+      else
+        <if line != prev>
+          print line
+          prev = line
+  else
+    args = argv()
+    (for i in 1..argc())
+      path = args[i]
+      content = file_read_file(path)
+      lines = str_split(content, "\n")
+      (for j in 0..len(lines))
+        line = lines[j]
+        <if first == 1>
+          print line
+          prev = line
+          first = 0
+        else
+          <if line != prev>
+            print line
+            prev = line

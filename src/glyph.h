@@ -201,6 +201,7 @@ a_node *parse(const tokenlist *tl);
 
 typedef enum {
     V_INT, V_FLOAT, V_STRING, V_ARRAY, V_NIL, V_FUNC, V_NATIVE, V_PTR,
+    V_DICT,                  /* hash table: keys are strings */
 } v_kind;
 
 typedef struct value value;
@@ -212,6 +213,15 @@ typedef struct {
     size_t len, cap;
 } varr;
 
+/* dict storage type — hash table with FNV-1a + linear probing.
+ * Keys are owned strings; values are owned values. */
+typedef struct {
+    char  **keys;     /* NULL slot = empty; otherwise owned string */
+    value  *vals;
+    size_t  len;      /* number of occupied slots */
+    size_t  cap;      /* total slots (power of 2) */
+} vdict;
+
 struct value {
     v_kind kind;
     union {
@@ -219,6 +229,7 @@ struct value {
         double   f;
         char    *s;          /* owned by V_STRING */
         varr    *arr;        /* heap-allocated, not refcounted in v1 */
+        vdict   *dict;       /* V_DICT */
         struct {
             a_node *def;     /* A_BLOCK_SQUIRE */
             struct env *closure;
@@ -234,6 +245,7 @@ value v_float(double f);
 value v_str(const char *s);
 value v_str_take(char *s);     /* takes ownership of s */
 value v_arr(void);
+value v_dict_value(void);      /* new empty dict (V_DICT) */
 value v_nil(void);
 value v_native(native_fn fn);
 value v_ptr(void *p);
@@ -244,6 +256,14 @@ value v_truthy(const value *v);
 char *v_to_string(const value *v);   /* returns malloc'd string for print */
 int   v_eq(const value *a, const value *b);
 int   v_lt(const value *a, const value *b);
+
+/* dict operations (used by stdlib and json) */
+vdict *dict_new(void);
+void   dict_free(vdict *d);
+int    dict_set(vdict *d, const char *key, value v);  /* takes ownership of v */
+value  dict_get(vdict *d, const char *key, int *found);
+int    dict_has(vdict *d, const char *key);
+int    dict_del(vdict *d, const char *key);           /* returns 1 if removed */
 
 /* ------------------------------------------------------------------ */
 /* environment (interpreter)                                          */
@@ -327,5 +347,166 @@ native_fn ffi_nb_pipe_close(void);
 native_fn ffi_nb_lang_eval(void);
 native_fn ffi_nb_lang_call(void);
 native_fn ffi_nb_lang_list(void);
+
+/* ------------------------------------------------------------------ */
+/* Standard library (src/stdlib.c)                                    */
+/* Each function is exposed via a getter returning the native_fn.     */
+/* ------------------------------------------------------------------ */
+
+/* Strings */
+native_fn stdlib_str_find(void);
+native_fn stdlib_str_find_from(void);
+native_fn stdlib_str_slice(void);
+native_fn stdlib_str_split(void);
+native_fn stdlib_str_join(void);
+native_fn stdlib_str_replace(void);
+native_fn stdlib_str_replace_all(void);
+native_fn stdlib_str_trim(void);
+native_fn stdlib_str_trim_left(void);
+native_fn stdlib_str_trim_right(void);
+native_fn stdlib_str_upper(void);
+native_fn stdlib_str_lower(void);
+native_fn stdlib_str_starts_with(void);
+native_fn stdlib_str_ends_with(void);
+native_fn stdlib_str_contains(void);
+native_fn stdlib_str_repeat(void);
+native_fn stdlib_str_reverse(void);
+native_fn stdlib_str_chars(void);
+native_fn stdlib_str_bytes(void);
+native_fn stdlib_str_from_bytes(void);
+native_fn stdlib_str_to_int(void);
+native_fn stdlib_str_to_float(void);
+native_fn stdlib_int_to_str(void);
+native_fn stdlib_float_to_str(void);
+native_fn stdlib_str_format(void);
+
+/* Arrays */
+native_fn stdlib_arr_push(void);
+native_fn stdlib_arr_pop(void);
+native_fn stdlib_arr_shift(void);
+native_fn stdlib_arr_unshift(void);
+native_fn stdlib_arr_map(void);
+native_fn stdlib_arr_filter(void);
+native_fn stdlib_arr_reduce(void);
+native_fn stdlib_arr_sort(void);
+native_fn stdlib_arr_reverse(void);
+native_fn stdlib_arr_concat(void);
+native_fn stdlib_arr_slice(void);
+native_fn stdlib_arr_find(void);
+native_fn stdlib_arr_contains(void);
+
+/* Dicts */
+native_fn stdlib_dict_new(void);
+native_fn stdlib_dict_set(void);
+native_fn stdlib_dict_get(void);
+native_fn stdlib_dict_get_or(void);
+native_fn stdlib_dict_has(void);
+native_fn stdlib_dict_del(void);
+native_fn stdlib_dict_keys(void);
+native_fn stdlib_dict_vals(void);
+native_fn stdlib_dict_size(void);
+native_fn stdlib_dict_clear(void);
+
+/* Files */
+native_fn stdlib_file_open(void);
+native_fn stdlib_file_close(void);
+native_fn stdlib_file_read(void);
+native_fn stdlib_file_readln(void);
+native_fn stdlib_file_read_all(void);
+native_fn stdlib_file_write(void);
+native_fn stdlib_file_writeln(void);
+native_fn stdlib_file_eof(void);
+native_fn stdlib_file_seek(void);
+native_fn stdlib_file_tell(void);
+native_fn stdlib_file_flush(void);
+native_fn stdlib_file_size(void);
+native_fn stdlib_file_exists(void);
+native_fn stdlib_file_is_dir(void);
+native_fn stdlib_file_stat(void);
+native_fn stdlib_file_mkdir(void);
+native_fn stdlib_file_rmdir(void);
+native_fn stdlib_file_unlink(void);
+native_fn stdlib_file_rename(void);
+native_fn stdlib_file_list(void);
+native_fn stdlib_file_read_file(void);
+native_fn stdlib_file_write_file(void);
+
+/* Math */
+native_fn stdlib_math_sin(void);
+native_fn stdlib_math_cos(void);
+native_fn stdlib_math_tan(void);
+native_fn stdlib_math_asin(void);
+native_fn stdlib_math_acos(void);
+native_fn stdlib_math_atan(void);
+native_fn stdlib_math_atan2(void);
+native_fn stdlib_math_pow(void);
+native_fn stdlib_math_sqrt(void);
+native_fn stdlib_math_cbrt(void);
+native_fn stdlib_math_log(void);
+native_fn stdlib_math_log2(void);
+native_fn stdlib_math_log10(void);
+native_fn stdlib_math_exp(void);
+native_fn stdlib_math_floor(void);
+native_fn stdlib_math_ceil(void);
+native_fn stdlib_math_round(void);
+native_fn stdlib_math_min(void);
+native_fn stdlib_math_max(void);
+native_fn stdlib_math_abs(void);
+native_fn stdlib_math_sign(void);
+native_fn stdlib_math_clamp(void);
+native_fn stdlib_math_random(void);
+native_fn stdlib_math_random_int(void);
+native_fn stdlib_math_random_seed(void);
+
+/* Time */
+native_fn stdlib_time_now(void);
+native_fn stdlib_time_now_s(void);
+native_fn stdlib_time_now_ns(void);
+native_fn stdlib_time_sleep(void);
+native_fn stdlib_time_sleep_ms(void);
+native_fn stdlib_time_sleep_ns(void);
+native_fn stdlib_time_format(void);
+native_fn stdlib_time_year(void);
+native_fn stdlib_time_month(void);
+native_fn stdlib_time_day(void);
+native_fn stdlib_time_hour(void);
+native_fn stdlib_time_min(void);
+native_fn stdlib_time_sec(void);
+native_fn stdlib_time_weekday(void);
+
+/* Process */
+native_fn stdlib_proc_getpid(void);
+native_fn stdlib_proc_getppid(void);
+native_fn stdlib_proc_env(void);
+native_fn stdlib_proc_env_set(void);
+native_fn stdlib_proc_env_unset(void);
+native_fn stdlib_proc_env_list(void);
+native_fn stdlib_proc_cwd(void);
+native_fn stdlib_proc_chdir(void);
+native_fn stdlib_proc_fork(void);
+native_fn stdlib_proc_wait(void);
+native_fn stdlib_proc_wait_any(void);
+native_fn stdlib_proc_kill(void);
+
+/* Functional */
+native_fn stdlib_call(void);
+native_fn stdlib_apply(void);
+
+/* ------------------------------------------------------------------ */
+/* JSON (src/json.c)                                                  */
+/* ------------------------------------------------------------------ */
+
+native_fn json_nb_parse(void);
+native_fn json_nb_stringify(void);
+native_fn json_nb_stringify_pretty(void);
+
+int  json_parse_value(const char *src, value *out);
+char *json_stringify_value(const value *v, int pretty, int indent);
+
+/* ------------------------------------------------------------------ */
+/* Interpreter access (for stdlib callbacks)                          */
+/* ------------------------------------------------------------------ */
+
+value interp_call_global_squire(const char *name, int argc, value *argv);
 
 #endif /* GLYPH_H */

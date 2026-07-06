@@ -1,0 +1,45 @@
+# examples/wc.glyph — word, line, and byte count.
+#
+# Usage: glyph examples/wc.glyph file1 file2 ...
+# If no files given, reads stdin.
+#
+# Like Unix `wc`, prints: lines words bytes
+
+[count_text text]
+  lines = 0
+  words = 0
+  bytes = len(text)
+  in_word = 0
+  chars = str_chars(text)
+  (for i in 0..len(chars))
+    c = chars[i]
+    <if c == " " || c == "\t" || c == "\r">
+      in_word = 0
+    else
+      <if c == "\n">
+        lines = lines + 1
+        in_word = 0
+      else
+        <if in_word == 0>
+          words = words + 1
+          in_word = 1
+  return [lines, words, bytes]
+
+(main)
+  <if argc() < 2>
+    # stdin
+    content = ""
+    (loop)
+      line = readln()
+      <if line == "">
+        stop
+      content = content + line + "\n"
+    counts = the [count_text content]
+    print counts[0], counts[1], counts[2]
+  else
+    args = argv()
+    (for i in 1..argc())
+      path = args[i]
+      content = file_read_file(path)
+      counts = the [count_text content]
+      print counts[0], counts[1], counts[2], path

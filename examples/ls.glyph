@@ -1,0 +1,32 @@
+# examples/ls.glyph — list directory contents.
+#
+# Usage: glyph examples/ls.glyph [DIR...]
+# Default DIR is the current directory.
+#
+# Like Unix `ls` (basic form, no flags yet).
+
+(main)
+  dirs = []
+  <if argc() < 2>
+    arr_push(dirs, ".")
+  else
+    args = argv()
+    (for i in 1..argc())
+      arr_push(dirs, args[i])
+
+  (for dirpath in dirs)
+    entries = file_list(dirpath)
+    <if len(entries) == 0>
+      next
+    arr_sort(entries)
+    <if len(dirs) > 1>
+      print dirpath + ":"
+    line = ""
+    (for name in entries)
+      <if name == "." || name == "..">
+        next
+      <if line == "">
+        line = name
+      else
+        line = line + "  " + name
+    print line

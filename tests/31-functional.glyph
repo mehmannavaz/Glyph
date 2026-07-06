@@ -1,0 +1,56 @@
+# tests/31-functional.glyph — functional array operations
+
+[square x]
+  return x * x
+
+[is_odd x]
+  return x - x / 2 * 2
+
+[add a b]
+  return a + b
+
+[cmp a b]
+  <if a < b>
+    return -1
+  <if a > b>
+    return 1
+  return 0
+
+[concat_acc acc s]
+  return acc + s
+
+(main)
+  nums = [1, 2, 3, 4, 5]
+
+  print "arr_map square:", arr_map(nums, "square")
+  print "arr_filter odd:", arr_filter(nums, "is_odd")
+  print "arr_reduce add:", arr_reduce(nums, "add", 0)
+  print "arr_reduce concat:", arr_reduce(["a", "b", "c"], "concat_acc", "")
+
+  print ""
+  print "=== sort ==="
+  unsorted = [3, 1, 4, 1, 5, 9, 2, 6]
+  print "before:", unsorted
+  arr_sort(unsorted)
+  print "after:", unsorted
+  arr_sort(unsorted, "cmp")
+  print "with cmp:", unsorted
+
+  print ""
+  print "=== call/apply ==="
+  result = call("square", [7])
+  print "call square 7:", result
+  result2 = apply("add", [3, 4])
+  print "apply add 3 4:", result2
+
+  print ""
+  print "=== arr_push/pop/shift ==="
+  a = [1, 2, 3]
+  arr_push(a, 4)
+  print "after push:", a
+  p = arr_pop(a)
+  print "popped:", p, "arr:", a
+  s = arr_shift(a)
+  print "shifted:", s, "arr:", a
+  arr_unshift(a, 0)
+  print "after unshift:", a
