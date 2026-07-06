@@ -1,0 +1,73 @@
+# examples/multilang.glyph — Glyph calling every supported language.
+#
+# This is the canonical demo for the language-agnostic FFI: from a
+# single Glyph program, we evaluate code in 8 different languages
+# (Python, Node, C, C++, Rust, Zig, Nim, Bash) and print each result.
+#
+# Run: GLYPH_LIB=./lib glyph examples/multilang.glyph
+#
+# Each language is a filter. We send it a JSON request on stdin, it
+# sends back a JSON response on stdout. No special-case binding code
+# per language. This is the Plan 9 / Unix way.
+
+[lang_demo lang code]
+  result = lang_eval(lang, code)
+  print "  [" + lang + "] " + code
+  print "    -> " + result
+  return result
+
+(main)
+  print "============================================"
+  print "  Glyph Multi-Language FFI Demo"
+  print "  (Plan 9 way: every language is a filter)"
+  print "============================================"
+  print ""
+
+  print "Available languages:", lang_list()
+  print ""
+
+  print "----- Python -----"
+  the [lang_demo "python" "1 + 2 * 3"]
+  the [lang_demo "python" "[x*x for x in range(5)]"]
+  the [lang_demo "python" "import os; os.getpid()"]
+
+  print ""
+  print "----- Node.js / JavaScript -----"
+  the [lang_demo "node" "1 + 2 * 3"]
+  the [lang_demo "node" "Math.sqrt(144)"]
+  the [lang_demo "node" "[1,2,3].map(x => x*2).join(',')"]
+
+  print ""
+  print "----- C -----"
+  the [lang_demo "c" "printf(\"%d\", 6 * 7);"]
+  the [lang_demo "c" "printf(\"hello from C\");"]
+
+  print ""
+  print "----- C++ -----"
+  the [lang_demo "cpp" "std::cout << (6 * 7);"]
+  the [lang_demo "cpp" "std::cout << \"hello from C++\";"]
+
+  print ""
+  print "----- Rust -----"
+  the [lang_demo "rust" "42"]
+  the [lang_demo "rust" "\"hello from Rust\".to_string()"]
+
+  print ""
+  print "----- Zig -----"
+  the [lang_demo "zig" "print(\"{d}\", .{6 * 7});"]
+  the [lang_demo "zig" "print(\"hello from Zig\", .{});"]
+
+  print ""
+  print "----- Nim -----"
+  the [lang_demo "nim" "echo 6 * 7"]
+  the [lang_demo "nim" "echo \"hello from Nim\""]
+
+  print ""
+  print "----- Bash -----"
+  the [lang_demo "bash" "echo hello from bash"]
+  the [lang_demo "bash" "date +%Y-%m-%d"]
+
+  print ""
+  print "============================================"
+  print "  Demo complete."
+  print "============================================"

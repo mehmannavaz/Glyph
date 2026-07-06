@@ -296,4 +296,34 @@ int jit_run(const char *ir_text);
 
 int cli_main(int argc, char **argv);
 
+/* ------------------------------------------------------------------ */
+/* FFI extension (src/ffi.c)                                          */
+/*                                                                    */
+/* Language-agnostic FFI via subprocess pipes. Provides:              */
+/*   exec(cmd, input?) -> string        Run cmd, return stdout         */
+/*   exec_status(cmd, input?) -> int    Run cmd, return exit code      */
+/*   pipe_open(cmd) -> ptr              Spawn persistent subprocess    */
+/*   pipe_write(h, s) -> int            Write string to subprocess     */
+/*   pipe_readln(h) -> string           Read one line (nil on EOF)     */
+/*   pipe_read(h, n) -> string          Read up to n bytes             */
+/*   pipe_close(h) -> int               Close subprocess, get status   */
+/*   lang_eval(lang, code) -> string    Eval code in any language      */
+/*   lang_call(lang, mod, fn, args)     Call fn in lang module         */
+/*   lang_list() -> array               List available languages       */
+/*                                                                    */
+/* Each function is exposed as a getter returning the native_fn so    */
+/* that interp.c (which owns the interp struct) can register them.    */
+/* ------------------------------------------------------------------ */
+
+native_fn ffi_nb_exec(void);
+native_fn ffi_nb_exec_status(void);
+native_fn ffi_nb_pipe_open(void);
+native_fn ffi_nb_pipe_write(void);
+native_fn ffi_nb_pipe_readln(void);
+native_fn ffi_nb_pipe_read(void);
+native_fn ffi_nb_pipe_close(void);
+native_fn ffi_nb_lang_eval(void);
+native_fn ffi_nb_lang_call(void);
+native_fn ffi_nb_lang_list(void);
+
 #endif /* GLYPH_H */

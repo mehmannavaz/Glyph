@@ -1,0 +1,52 @@
+# examples/persistent_pipe.glyph — High-frequency calls via persistent pipe.
+#
+# The lang_eval/lang_call primitives spawn a fresh process for each
+# call, which is slow for tight loops. For high-frequency calls, use
+# pipe_open / pipe_write / pipe_readln / pipe_close to keep a
+# persistent subprocess alive and amortise the spawn cost.
+#
+# This demo spawns a Python interpreter that stays alive, then sends
+# it many requests via the pipe protocol. State is preserved between
+# calls because Python's globals dict survives across eval invocations.
+
+g_py = ptr_null
+
+[py_eval code]
+  # Send one eval request, read one response.
+  # Returns the raw JSON response line.
+  req = "{\"op\":\"eval\",\"code\":\"" + code + "\"}\n"
+  pipe_write(g_py, req)
+  return pipe_readln(g_py)
+
+(main)
+  print "=== Persistent pipe demo ==="
+  print "Spawning python adapter..."
+
+  adapter = "/home/z/my-project/Glyph/lib/lang/python.sh"
+  g_py = pipe_open(adapter)
+  print "pipe handle:", g_py
+  print "type:", type(g_py)
+
+  print ""
+  print "Sending 5 eval requests..."
+  (for i in 0..5)
+    code = "i = " + string(i) + "; i * i"
+    resp = the [py_eval code]
+    print "  python (" + string(i) + "^2) = " + resp
+
+  print ""
+  print "Now asking for accumulated state (i should be 4):"
+  resp = the [py_eval "i"]
+  print "  python i = " + resp
+
+  print ""
+  print "Defining a function in Python..."
+  resp = the [py_eval "def fib(n): return n if n < 2 else fib(n-1) + fib(n-2)"]
+  print "  define result:", resp
+  resp = the [py_eval "fib(10)"]
+  print "  fib(10) = " + resp
+
+  print ""
+  print "Closing pipe..."
+  status = pipe_close(g_py)
+  print "exit status:", status
