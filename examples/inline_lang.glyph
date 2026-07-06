@@ -1,0 +1,53 @@
+# examples/inline_lang.glyph — Inline foreign-language blocks.
+#
+# This is the simplest way to call another language from Glyph:
+# write [langname] on its own line, then the foreign code indented
+# below it. The block runs until the next line dedents back to (or
+# below) the opener's column. No closer needed — same rule as [squire].
+
+(main)
+  print "--- 1. Python with f-strings ---"
+  [python]
+    test = "text"
+    print(f"{test}")
+
+  print "--- 2. Python with multi-line code ---"
+  [python]
+    def greet(name):
+        return f"hello, {name}"
+    print(greet("world"))
+    print(sum(range(1, 11)))
+
+  print "--- 3. Node.js / JavaScript ---"
+  [node]
+    const nums = [1, 2, 3, 4, 5];
+    console.log("sum:", nums.reduce((a, b) => a + b, 0));
+    console.log("doubled:", nums.map(x => x * 2));
+
+  print "--- 4. Bash (use backticks and pipes freely) ---"
+  [bash]
+    echo "today is $(date +%A)"
+    echo "files in /tmp: $(ls /tmp | wc -l)"
+
+  print "--- 5. C (compiled on the fly) ---"
+  [c]
+    int sum = 0;
+    for (int i = 1; i <= 10; i++) sum += i;
+    printf("sum 1..10 = %d\n", sum);
+
+  print "--- 6. C++ ---"
+  [cpp]
+    std::vector<int> v = {1, 2, 3, 4, 5};
+    int sum = 0;
+    for (int x : v) sum += x;
+    std::cout << "C++ sum = " << sum << "\n";
+
+  print "--- 7. Mix: Python computes, Glyph prints ---"
+  result = lang_eval("python", "6 * 7")
+  print "python says 6*7 =", result
+
+  print "--- 8. Mix: Node computes a JSON string, Glyph receives ---"
+  json = lang_eval("node", "JSON.stringify({a:1, b:2})")
+  print "node made json:", json
+
+  print "--- done ---"

@@ -132,6 +132,128 @@ static char *read_string(lexer *L) {
 static int is_ident_start(int c) { return isalpha(c) || c == '_'; }
 static int is_ident_cont(int c)  { return isalnum(c) || c == '_'; }
 
+/* Languages recognised by the [langname] ... block syntax.
+ * When the lexer sees `[<one-of-these>]` at statement start, it captures
+ * the raw source text until the next block opener at the same or lower
+ * column, or EOF. The captured text becomes a T_RAW_STRING token.
+ *
+ * Adding a new language is a one-line change here. */
+static const char *FOREIGN_LANGS[] = {
+    "python", "python3", "py",
+    "node", "nodejs", "js", "javascript",
+    "rust", "rs",
+    "zig",
+    "nim",
+    "c", "cpp", "c++",
+    "elm",
+    "go", "golang",
+    "ruby", "rb",
+    "perl",
+    "lua",
+    "julia",
+    "tcl",
+    "bash", "sh", "shell",
+    "awk", "sed",
+    NULL
+};
+
+static int is_foreign_lang(const char *name) {
+    for (int i = 0; FOREIGN_LANGS[i]; i++) {
+        if (strcmp(FOREIGN_LANGS[i], name) == 0) return 1;
+    }
+    return 0;
+}
+
+/* Capture raw source text for a [lang] block body. The text starts at
+ * the line AFTER the closing ] of the header, and ends at the first
+ * line whose first non-whitespace character is one of `[ ( < {` at a
+ * column <= opener_col, or at EOF. The captured text is returned as a
+ * malloc'd string (caller frees). The lexer state (L->p, L->line,
+ * L->col) is advanced past the captured text.
+ *
+ * The returned text has the common leading whitespace of non-empty
+ * lines stripped (dedented), so the foreign code starts at column 1
+ * regardless of how deeply it was nested in Glyph source. This is
+ * essential for Python (which errors on unexpected indent) and nice
+ * for everyone else. */
+static char *capture_raw_block(lexer *L, int opener_col) {
+    /* Phase 1: capture raw lines into a temporary buffer. */
+    sbuf raw; sbuf_init(&raw);
+
+    /* Skip the rest of the line containing `]` (the newline too). */
+    while (*L->p && *L->p != '\n') { L->p++; L->col++; }
+    if (*L->p == '\n') { L->p++; L->line++; L->col = 1; }
+
+    /* Capture lines until dedent or EOF. */
+    while (*L->p) {
+        /* Count leading whitespace on this line. */
+        const char *ws_end = L->p;
+        int line_col = 1;
+        while (*ws_end == ' ' || *ws_end == '\t') { ws_end++; line_col++; }
+
+        /* If line is blank (just newline or EOF), copy it verbatim. */
+        if (*ws_end == '\n' || *ws_end == '\0') {
+            while (*L->p && *L->p != '\n') { sbuf_putc(&raw, *L->p); L->p++; L->col++; }
+            if (*L->p == '\n') { sbuf_putc(&raw, '\n'); L->p++; L->line++; L->col = 1; }
+            continue;
+        }
+
+        /* If this line's first non-ws char is at col <= opener_col,
+         * the foreign block has ended — stop capturing. This matches
+         * how Glyph squire bodies terminate (dedent = end of block).
+         * It doesn't matter what the first char IS; any dedent ends
+         * the block. */
+        if (line_col <= opener_col) {
+            break;
+        }
+
+        /* Otherwise: copy this line verbatim. */
+        while (*L->p && *L->p != '\n') { sbuf_putc(&raw, *L->p); L->p++; L->col++; }
+        if (*L->p == '\n') { sbuf_putc(&raw, '\n'); L->p++; L->line++; L->col = 1; }
+    }
+
+    if (!raw.data || raw.len == 0) {
+        return strdup("");
+    }
+
+    /* Phase 2: compute the common leading whitespace across all
+     * non-blank lines. */
+    size_t common = (size_t)-1;
+    const char *p = raw.data;
+    while (*p) {
+        /* measure leading ws of this line */
+        size_t ws = 0;
+        while (p[ws] == ' ' || p[ws] == '\t') ws++;
+        /* if line is all-ws + newline (or end), skip it */
+        if (p[ws] == '\n' || p[ws] == '\0') {
+            /* skip to next line */
+            p += ws;
+            if (*p == '\n') p++;
+            continue;
+        }
+        if (ws < common) common = ws;
+        /* advance to next line */
+        while (*p && *p != '\n') p++;
+        if (*p == '\n') p++;
+    }
+    if (common == (size_t)-1) common = 0;
+
+    /* Phase 3: build the dedented output. */
+    sbuf out; sbuf_init(&out);
+    p = raw.data;
+    while (*p) {
+        /* skip up to `common` leading ws chars */
+        size_t to_skip = common;
+        while (to_skip > 0 && (*p == ' ' || *p == '\t')) { p++; to_skip--; }
+        /* copy rest of line */
+        while (*p && *p != '\n') { sbuf_putc(&out, *p); p++; }
+        if (*p == '\n') { sbuf_putc(&out, '\n'); p++; }
+    }
+
+    free(raw.data);
+    return out.data ? out.data : strdup("");
+}
+
 tokenlist *lex(const char *src, const char *srcname) {
     lexer L = {0};
     L.src = src;
@@ -289,7 +411,61 @@ tokenlist *lex(const char *src, const char *srcname) {
             case ',': emit(&L, T_COMMA); break;
             case '?': emit(&L, T_QUESTION); break;
             case ';': emit(&L, T_SEMI); break;
-            case '[': emit(&L, T_SQUARE_O); break;
+            case '[': {
+                /* Check for [langname] foreign block at statement start.
+                 * Pattern: [ ident ] at start of a line. If ident is a
+                 * known foreign language, capture the raw body. */
+                if (L.at_stmt_start) {
+                    /* Look ahead: [ ident ] */
+                    const char *q = L.p + 1;
+                    while (*q == ' ' || *q == '\t') q++;
+                    if (is_ident_start((unsigned char)*q)) {
+                        const char *name_start = q;
+                        while (is_ident_cont((unsigned char)*q)) q++;
+                        size_t name_len = (size_t)(q - name_start);
+                        char *name = malloc(name_len + 1);
+                        memcpy(name, name_start, name_len);
+                        name[name_len] = '\0';
+                        const char *r = q;
+                        while (*r == ' ' || *r == '\t') r++;
+                        if (*r == ']') {
+                            /* We have [ident]. Check if it's a foreign lang. */
+                            if (is_foreign_lang(name)) {
+                                /* Emit: T_SQUARE_O, T_IDENT(name), T_SQUARE_C,
+                                 * T_RAW_STRING(body). Then continue lexing
+                                 * from after the captured body. */
+                                int opener_col = L.col;
+                                emit(&L, T_SQUARE_O);
+                                /* advance past [ */
+                                L.p++; L.col++;
+                                /* emit the ident */
+                                emit_str(&L, T_IDENT, name);
+                                /* advance past ident and any ws */
+                                L.p = name_start + name_len;
+                                L.col = opener_col + 1 + (int)(name_start - (L.p - name_len)) ;
+                                L.col = opener_col + 1;
+                                while (*L.p == ' ' || *L.p == '\t') { L.p++; L.col++; }
+                                /* emit ] */
+                                emit(&L, T_SQUARE_C);
+                                L.p++; L.col++;  /* consume ] */
+                                /* capture raw body */
+                                int saved_col = L.col;
+                                char *body = capture_raw_block(&L, opener_col);
+                                (void)saved_col;
+                                emit_str(&L, T_RAW_STRING, body);
+                                /* Set at_stmt_start so the next [/(/{/< at
+                                 * col 1 starts a new block (which it will,
+                                 * because the body capture stopped at it). */
+                                L.at_stmt_start = 1;
+                                break;  /* done with this [ */
+                            }
+                        }
+                        free(name);
+                    }
+                }
+                emit(&L, T_SQUARE_O);
+                break;
+            }
             case ']': emit(&L, T_SQUARE_C); break;
             case '(': emit(&L, T_PAREN_O); break;
             case ')': emit(&L, T_PAREN_C); break;
@@ -332,6 +508,7 @@ const char *tok_kind_name(token_kind k) {
         case T_INT: return "INT";
         case T_FLOAT: return "FLOAT";
         case T_STRING: return "STRING";
+        case T_RAW_STRING: return "RAW_STRING";
         case T_SQUARE_O: return "[";
         case T_SQUARE_C: return "]";
         case T_PAREN_O: return "(";

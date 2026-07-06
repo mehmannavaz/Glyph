@@ -1,2 +1,13 @@
-bin/glyph
-/glyph
+# Build artifacts
+*.o
+glyph
+glyphide
+screenshot
+
+# Editor / OS
+*.swp
+*.swo
+*~
+.DS_Store
+__pycache__/
+*.pyc

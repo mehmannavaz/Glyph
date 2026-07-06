@@ -1,0 +1,12 @@
+=== start ===
+6 * 7 = 42
+=== after python ===
+bash says hi
+line two from bash
+=== after bash ===
+node says hi
+6
+=== after node ===
+c: 123
+=== after c ===
+=== done ===

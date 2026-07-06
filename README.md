@@ -246,6 +246,106 @@ argv()                      Array of program argument strings
 system(cmd)                 Run a shell command
 ```
 
+## Inline Foreign Language Blocks
+
+Glyph can call **any** language inline, using a block syntax that matches
+the existing `[squire]` shape. The block runs until the next line dedents
+to or below the opener's column — no closer needed.
+
+```glyph
+(main)
+  print "before"
+  [python]
+    test = "text"
+    print(f"{test}")
+  print "after"
+```
+
+Output:
+```
+before
+text
+after
+```
+
+Supported languages (any name in `FOREIGN_LANGS` in `src/lex.c`):
+
+```
+python  python3  py
+node    nodejs   js  javascript
+rust    rs
+zig
+nim
+c       cpp      c++
+elm
+go      golang
+ruby    rb
+perl
+lua
+julia
+tcl
+bash    sh       shell
+awk     sed
+```
+
+Each language has a tiny adapter script in `lib/lang/<lang>.sh` that
+speaks a line-delimited JSON protocol: Glyph sends `{"op":"eval","code":"..."}`
+on stdin, the adapter runs the code and replies `{"value":"..."}` on stdout.
+
+This is the **Plan 9 / Unix way**: every language is a filter. No
+special-case binding code per language. Composable, replaceable, hackable.
+
+### How it works
+
+1. The lexer recognises `[langname]` at statement start where `langname`
+   is a known foreign language.
+2. It captures the raw source text until the next line dedents to or
+   below the opener's column (or EOF). The captured text is dedented
+   (common leading whitespace stripped) so Python doesn't choke.
+3. The parser produces an `A_BLOCK_LANG` node holding the language name
+   and the raw body.
+4. At runtime, the interpreter calls the `lang_eval` builtin (from
+   `src/ffi.c`) which spawns the adapter, sends the code as JSON, and
+   reads the response. If the response is a non-empty string, it's
+   printed to stdout.
+
+### Adding a new language
+
+1. Add its name to `FOREIGN_LANGS[]` in `src/lex.c`.
+2. Write `lib/lang/<lang>.sh` that reads JSON requests on stdin and
+   writes JSON responses on stdout. See `lib/lang/python.sh` for a
+   template.
+
+That's it. No compiler changes, no runtime changes.
+
+### Low-level FFI primitives
+
+For cases where the inline block syntax isn't enough (programmatic
+code generation, persistent subprocesses, calling C shared libraries
+directly), Glyph exposes these builtins:
+
+```
+exec(cmd, input?) -> string       Run command, capture stdout
+exec_status(cmd, input?) -> int   Run command, return exit code
+pipe_open(cmd) -> ptr             Spawn persistent subprocess
+pipe_write(h, s) -> int           Write to subprocess stdin
+pipe_readln(h) -> string          Read one line (nil on EOF)
+pipe_read(h, n) -> string         Read up to n bytes
+pipe_close(h) -> int              Close subprocess
+lang_eval(lang, code) -> string   Eval code in any language
+lang_call(lang, mod, fn, args)    Call fn in lang's module
+lang_list() -> array              List available languages
+dlopen(name) -> ptr               Open shared library
+dlsym(handle, name) -> ptr        Look up symbol in library
+ccall(handle, name, args, ret)    Call C function (int/ptr args)
+ccallf(handle, name, args, ret, argtypes)  Call C function with typed args
+ptr_null() -> ptr                 NULL pointer
+ptr_read(p, off) -> int           Read 8 bytes at p+off
+ptr_write(p, off, val)            Write 8 bytes at p+off
+malloc(n) -> ptr                  Allocate n bytes
+free(p)                           Free allocation
+```
+
 ---
 
 ## CLI Usage

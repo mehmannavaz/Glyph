@@ -2,10 +2,14 @@
 # lib/lang/node.sh — Glyph language adapter for Node.js / V8 / JavaScript.
 #
 # Protocol: see lib/lang/python.sh
+# Print output is captured and returned as the value.
 
 exec node -e '
 const readline = require("readline");
 const rl = readline.createInterface({ input: process.stdin });
+
+// Persistent global namespace.
+const GLYPH_GLOBAL = {};
 
 rl.on("line", (line) => {
     line = line.trim();
@@ -18,19 +22,31 @@ rl.on("line", (line) => {
     try {
         if (req.op === "eval") {
             const code = req.code || "";
-            // Wrap in a return-ing function so the last expression value comes back.
-            // Try eval first (works for expressions), fall back to Function.
+            // Capture console.log output
+            let captured = "";
+            const origLog = console.log;
+            const origInfo = console.info;
+            const origWarn = console.warn;
+            const origErr = console.error;
+            console.log = (...args) => { captured += args.join(" ") + "\n"; };
+            console.info = console.log;
+            console.warn = (...args) => { captured += args.join(" ") + "\n"; };
+            console.error = (...args) => { captured += args.join(" ") + "\n"; };
             let result;
             try {
-                // Wrap in parens — if it is an expression, eval returns its value
-                result = eval("(" + code + ")");
-            } catch (e) {
-                // Statement form: run as-is, value is undefined
-                result = eval(code);
+                try {
+                    result = eval("(" + code + ")");
+                } catch (e) {
+                    result = eval(code);
+                }
+            } finally {
+                console.log = origLog;
+                console.info = origInfo;
+                console.warn = origWarn;
+                console.error = origErr;
             }
-            process.stdout.write(JSON.stringify({
-                value: result === undefined ? "" : String(result)
-            }) + "\n");
+            const val = captured.trim() || (result === undefined ? "" : String(result));
+            process.stdout.write(JSON.stringify({ value: val }) + "\n");
         } else if (req.op === "call") {
             let mod;
             if (req.module) {
@@ -40,10 +56,17 @@ rl.on("line", (line) => {
             }
             const fn = mod[req.function];
             if (typeof fn !== "function") throw new Error("not a function: " + req.function);
-            const result = fn(...(req.args || []));
-            process.stdout.write(JSON.stringify({
-                value: result === undefined ? "" : String(result)
-            }) + "\n");
+            let captured = "";
+            const origLog = console.log;
+            console.log = (...args) => { captured += args.join(" ") + "\n"; };
+            let result;
+            try {
+                result = fn(...(req.args || []));
+            } finally {
+                console.log = origLog;
+            }
+            const val = captured.trim() || (result === undefined ? "" : String(result));
+            process.stdout.write(JSON.stringify({ value: val }) + "\n");
         } else {
             process.stdout.write(JSON.stringify({ error: "unknown op: " + req.op }) + "\n");
         }

@@ -60,6 +60,7 @@ static const char *a_kind_name(a_kind k) {
         case A_BLOCK_SEQ: return "SEQ";
         case A_BLOCK_GUARD: return "GUARD";
         case A_BLOCK_TRIGGER: return "TRIGGER";
+        case A_BLOCK_LANG: return "BLOCK_LANG";
         case A_PROGRAM: return "PROGRAM";
     }
     return "?";

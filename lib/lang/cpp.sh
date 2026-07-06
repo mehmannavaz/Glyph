@@ -13,6 +13,10 @@ def cpp_eval(code):
 #include <iostream>
 #include <string>
 #include <cstdint>
+#include <vector>
+#include <map>
+#include <algorithm>
+#include <numeric>
 int main() {
     using namespace std;
 """ + code + """

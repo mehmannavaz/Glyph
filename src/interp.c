@@ -1430,6 +1430,49 @@ static void exec_block(interp *it, a_node *n, env *parent) {
             return;
         }
 
+        case A_BLOCK_LANG: {
+            /* [langname] rawcode — execute the raw code in the named
+             * language via the FFI lang_eval builtin, and print the
+             * result if non-empty. The block's sval is the language
+             * name; lhs is an A_STRING node holding the raw body. */
+            const char *lang = n->sval ? n->sval : "python";
+            const char *code = (n->lhs && n->lhs->sval) ? n->lhs->sval : "";
+
+            /* Look up the lang_eval builtin and call it directly. */
+            int found = 0;
+            value fn = env_get(it->globals, "lang_eval", &found);
+            if (!found || fn.kind != V_NATIVE) {
+                g_set_error("%d:%d: lang_eval builtin not available "
+                            "(FFI extension not loaded?)", n->line, n->col);
+                it->sig.kind = SIG_ERROR;
+                return;
+            }
+            value argv[2] = { v_str(lang), v_str(code) };
+            value rv = fn.as.nat(2, argv);
+            v_free(&argv[0]);
+            v_free(&argv[1]);
+
+            /* If the result is a non-empty string, print it. This
+             * matches the convention that an inline [lang] block's
+             * "side effect" is its stdout. */
+            if (rv.kind == V_STRING && rv.as.s && rv.as.s[0]) {
+                fputs(rv.as.s, stdout);
+                fputc('\n', stdout);
+                fflush(stdout);
+            }
+            if (rv.kind == V_NIL) {
+                /* lang_eval may have set an error via g_set_error */
+                const char *err = g_last_error();
+                if (err && err[0]) {
+                    g_set_error("%d:%d: [%s] block failed: %s",
+                                n->line, n->col, lang, err);
+                    it->sig.kind = SIG_ERROR;
+                }
+            }
+            v_free(&rv);
+            return;
+        }
+
         case A_BLOCK_TRIGGER: {
             interp_register_trigger(it, n->sval, n);
             return;
@@ -1603,6 +1646,7 @@ static void exec_stmt(interp *it, a_node *n, env *e) {
     switch (n->kind) {
         case A_BLOCK_SQUIRE:
         case A_BLOCK_TRIGGER:
+        case A_BLOCK_LANG:
         case A_BLOCK_LOOP_COUNT:
         case A_BLOCK_LOOP_INF:
         case A_BLOCK_LOOP_FOR:

@@ -5,6 +5,10 @@
 #   {"op":"eval","code":"<python source>"}                    -> {"value":"<repr>"}
 #   {"op":"call","module":"<name>","function":"<fn>","args":[...]} -> {"value":"<repr>"}
 #
+# The "value" field captures:
+#   - For expressions: the repr of the result
+#   - For statements: any captured stdout (print output)
+#
 # Errors: {"error":"<message>"}
 #
 # Plan 9 way: do one thing — read JSON, run Python, write JSON. No state.
@@ -23,22 +27,38 @@ def main():
         try:
             req = json.loads(line)
         except Exception as e:
-            sys.stdout.write(json.dumps({"error": "bad JSON: " + str(e)}) + "\n")
-            sys.stdout.flush()
+            sys.stderr.write(json.dumps({"error": "bad JSON: " + str(e)}) + "\n")
+            sys.stderr.flush()
             continue
 
         op = req.get("op")
         try:
             if op == "eval":
                 code = req.get("code", "")
+                # Capture stdout so that print() output is returned as the value
+                captured = io.StringIO()
+                old_stdout = sys.stdout
+                sys.stdout = captured
                 try:
-                    # Try eval first (for expressions)
-                    val = eval(code, GLYPH_GLOBALS)
-                except SyntaxError:
-                    # Not an expression — exec it
-                    exec(code, GLYPH_GLOBALS)
-                    val = GLYPH_GLOBALS.get("_", None)
-                sys.stdout.write(json.dumps({"value": "" if val is None else repr(val)}) + "\n")
+                    try:
+                        # Try eval first (for expressions)
+                        val = eval(code, GLYPH_GLOBALS)
+                    except SyntaxError:
+                        # Not an expression — exec it
+                        exec(code, GLYPH_GLOBALS)
+                        val = None
+                finally:
+                    sys.stdout = old_stdout
+                printed = captured.getvalue()
+                # If the code printed something, return that as the value
+                # (stripped of trailing newline). Otherwise return the eval result.
+                if printed:
+                    val_str = printed.rstrip("\n")
+                elif val is None:
+                    val_str = ""
+                else:
+                    val_str = repr(val)
+                sys.stdout.write(json.dumps({"value": val_str}) + "\n")
                 sys.stdout.flush()
 
             elif op == "call":
@@ -49,9 +69,22 @@ def main():
                     mod = importlib.import_module(module_name)
                 else:
                     mod = __builtins__ if hasattr(__builtins__, fn_name) else __import__("builtins")
-                fn = getattr(mod, fn_name)
-                result = fn(*args)
-                sys.stdout.write(json.dumps({"value": "" if result is None else repr(result)}) + "\n")
+                captured = io.StringIO()
+                old_stdout = sys.stdout
+                sys.stdout = captured
+                try:
+                    fn = getattr(mod, fn_name)
+                    result = fn(*args)
+                finally:
+                    sys.stdout = old_stdout
+                printed = captured.getvalue()
+                if printed:
+                    val_str = printed.rstrip("\n")
+                elif result is None:
+                    val_str = ""
+                else:
+                    val_str = repr(result)
+                sys.stdout.write(json.dumps({"value": val_str}) + "\n")
                 sys.stdout.flush()
             else:
                 sys.stdout.write(json.dumps({"error": "unknown op: " + str(op)}) + "\n")

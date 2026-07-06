@@ -1,0 +1,26 @@
+# tests/25-inline-lang.glyph — inline foreign language blocks
+#
+# Tests the [langname] ... block syntax that lets you embed code from
+# any language (Python, Node, Bash, etc.) directly inside a Glyph
+# program. The block runs until the next line dedents to or below the
+# opener's column — no [/lang] closer needed.
+
+(main)
+  print "=== start ==="
+  [python]
+    x = 6
+    y = 7
+    print(f"{x} * {y} = {x * y}")
+  print "=== after python ==="
+  [bash]
+    echo "bash says hi"
+    echo "line two from bash"
+  print "=== after bash ==="
+  [node]
+    console.log("node says " + "hi")
+    console.log([1,2,3].reduce((a,b) => a+b, 0))
+  print "=== after node ==="
+  [c]
+    printf("c: %d\n", 100 + 23);
+  print "=== after c ==="
+  print "=== done ==="

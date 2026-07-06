@@ -83,6 +83,7 @@ typedef enum {
     T_EOF = 0,
     T_NEWLINE, T_SEMI,
     T_IDENT, T_INT, T_FLOAT, T_STRING,
+    T_RAW_STRING,             /* raw captured text (e.g. body of [lang] block) */
     T_SQUARE_O, T_SQUARE_C,   /* [ ]  — also used as expression index */
     T_PAREN_O,  T_PAREN_C,    /* ( )  */
     T_BRACE_O,  T_BRACE_C,    /* { }  */
@@ -150,6 +151,7 @@ typedef enum {
     A_BLOCK_SEQ,          /* (name) body — labeled sequence, runs once */
     A_BLOCK_GUARD,        /* <cond> body [else body2] */
     A_BLOCK_TRIGGER,      /* {name} body */
+    A_BLOCK_LANG,         /* [langname] rawcode — inline foreign code block */
     A_PROGRAM,            /* top-level: list of statements */
 } a_kind;
 

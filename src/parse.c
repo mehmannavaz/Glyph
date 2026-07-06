@@ -319,6 +319,21 @@ static a_node *parse_block(parser *P) {
             P->i++;
         }
         if (!expect(P, T_SQUARE_C)) { a_free(blk); return NULL; }
+
+        /* Foreign-language block: [langname] followed by T_RAW_STRING.
+         * The lexer already captured the raw body for us. */
+        if (cur(P)->kind == T_RAW_STRING) {
+            blk->kind = A_BLOCK_LANG;
+            /* Store the raw body in the secondary payload (lhs is free
+             * here — it's only used by A_BINOP/A_ASSIGN/A_RETURN). We
+             * use a string literal node to hold it. */
+            a_node *body = a_new(A_STRING, cur(P)->line, cur(P)->col);
+            body->sval = strdup(cur(P)->text ? cur(P)->text : "");
+            blk->lhs = body;
+            P->i++;
+            return blk;
+        }
+
         /* body: statements with col > opener col, OR until explicit ] */
         token_kind stoppers[] = { T_SQUARE_C };
         a_node *body = parse_stmt_list_until(P, col, stoppers, 1);
