@@ -1,0 +1,29 @@
+# tests/10-recursion.glyph — deeper recursion: factorial, gcd, ackermann
+[fact n]
+  <if n <= 1>
+    return 1
+  else
+    return n * the [fact n - 1]
+
+[gcd a b]
+  <if b == 0>
+    return a
+  else
+    return the [gcd b a % b]
+
+[ackermann m n]
+  <if m == 0>
+    return n + 1
+  else
+    <if n == 0>
+      return the [ackermann m - 1 1]
+    else
+      return the [ackermann m - 1 the [ackermann m n - 1]]
+
+(main)
+  print "5! =", the [fact 5]
+  print "10! =", the [fact 10]
+  print "gcd(48, 36) =", the [gcd 48 36]
+  print "gcd(17, 5) =", the [gcd 17 5]
+  print "ackermann(2, 3) =", the [ackermann 2 3]
+  print "ackermann(3, 3) =", the [ackermann 3 3]

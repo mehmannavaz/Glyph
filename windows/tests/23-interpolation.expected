@@ -1,0 +1,18 @@
+Hello, World! x = 42
+Hello, World! x = 42 pi = 3.14
+Using ? shorthand
+x = 42, name = World
+multiple values 42 World
+10 + 20 = 30
+2^10 = 1024
+len(name) = 5
+arr = [1, 2, 3, 4, 5]
+arr[0] = 1, arr[4] = 5
+iteration 0: square = 0
+iteration 1: square = 1
+iteration 2: square = 4
+iteration 3: square = 9
+iteration 4: square = 16
+count = 42
+price = $9.99
+flag = 1

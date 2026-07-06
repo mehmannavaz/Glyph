@@ -1,0 +1,39 @@
+# tests/16-closures.glyph — squires capture their closure environment
+[make_counter start]
+  count = start
+  [increment]
+    count = count + 1
+    return count
+  [reset]
+    count = start
+    return count
+  return increment
+
+(main)
+  # this is a partial test: we don't have first-class squire values yet,
+  # so we test nested squire definitions are accessible from outer scope
+  [adder x y]
+    return x + y
+  print "3 + 4 =", the [adder 3 4]
+  print "10 + 20 =", the [adder 10 20]
+
+  # squire calling another squire
+  [double x]
+    return x * 2
+  [quadruple x]
+    return the [double the [double x]]
+  print "quad(5) =", the [quadruple 5]
+
+  # mutual recursion
+  [is_even n]
+    <if n == 0>
+      return 1
+    else
+      return the [is_odd n - 1]
+  [is_odd n]
+    <if n == 0>
+      return 0
+    else
+      return the [is_even n - 1]
+  print "is_even(10) =", the [is_even 10]
+  print "is_odd(7) =", the [is_odd 7]

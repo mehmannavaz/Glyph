@@ -1,0 +1,40 @@
+# examples/linked_list.glyph — a simple linked list using nested arrays
+# Each node is [value, next] where next is another node or nil
+
+[make_node value next]
+  return [value, next]
+
+[list_push node value]
+  <if node == nil>
+    return the [make_node value nil]
+  return the [make_node node[0] the [list_push node[1] value]]
+
+[list_print node]
+  <if node == nil>
+    print ""
+    return
+  write(string(node[0]))
+  <if node[1] != nil>
+    write(" -> ")
+  the [list_print node[1]]
+
+[list_length node]
+  <if node == nil>
+    return 0
+  return 1 + the [list_length node[1]]
+
+[list_sum node]
+  <if node == nil>
+    return 0
+  return node[0] + the [list_sum node[1]]
+
+(main)
+  # build a list: 1 -> 2 -> 3 -> 4 -> 5
+  list = nil
+  (for i in 1..6)
+    list = the [list_push list i]
+
+  print "list:"
+  the [list_print list]
+  print "length:", the [list_length list]
+  print "sum:", the [list_sum list]

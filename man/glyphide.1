@@ -1,0 +1,67 @@
+.Dd July 2, 2026
+.Dt GLYPHIDE 1
+.Os Linux
+.Sh NAME
+.Nm glyphide
+.Nd graphical+text IDE for the Glyph programming language
+.Sh SYNOPSIS
+.Nm
+.Op Ar file.glyph
+.Sh DESCRIPTION
+.Nm glyphide
+is a lightweight X11-based code editor for the Glyph programming language.
+It provides syntax highlighting, shape preview, code execution, and linting
+in a single binary.
+.Pp
+The IDE follows the language's philosophy: every block shape
+.Pq Sq [ Ns squire Ns , Sq ( Ns loop Ns , Sq < Ns guard Ns , Sq { Ns trigger Ns
+is colored differently, making the program's structure visible at a glance.
+.Sh FEATURES
+.Bl -tag -width "xxxx"
+.It Code editor
+Full text editing with auto-indentation, line numbers, and cursor movement.
+.It Shape-aware syntax highlighting
+Each block type (squire, loop, guard, trigger) gets a distinct color.
+.It Shape preview panel
+Visual panel showing block structure as colored boxes.
+.It Run button
+Execute the current code with the glyph interpreter.
+.It Lint integration
+Run the glyph linter on the current code.
+.It File operations
+Open, save, and create new files.
+.El
+.Sh KEYBOARD SHORTCUTS
+.Bl -tag -width "xxxx"
+.It Ctrl+R
+Run the current code.
+.It Ctrl+S
+Save the file.
+.It Ctrl+O
+Open a file.
+.It Ctrl+Q
+Quit the IDE.
+.It Esc
+Close the output panel.
+.It Arrow keys
+Move the cursor.
+.It Page Up/Down
+Scroll by page.
+.It Home/End
+Move to start/end of line.
+.It Enter
+Insert newline with auto-indentation.
+.El
+.Sh EXAMPLES
+Start the IDE with a file:
+.Dl $ glyphide hello.glyph
+.Pp
+Start with a new file:
+.Dl $ glyphide
+.Sh SEE ALSO
+.Xr glyph 1
+.br
+The full IDE documentation is at
+.Pa /usr/local/share/doc/glyph/ide.md .
+.Sh AUTHORS
+Glyph IDE v0.1.0 \(em built with C and X11.

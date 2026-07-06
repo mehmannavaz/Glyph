@@ -1,0 +1,30 @@
+# examples/prime.glyph — sieve of Eratosthenes
+# Demonstrates arrays, loops, and math
+
+[primes_up_to n]
+  sieve = []
+  (for i in 0..n + 1)
+    push(sieve, 1)
+
+  sieve[0] = 0
+  sieve[1] = 0
+
+  (for i in 2..n + 1)
+    <if sieve[i] == 1>
+      j = i * 2
+      (loop)
+        <if j > n>
+          stop
+        sieve[j] = 0
+        j = j + i
+
+  result = []
+  (for i in 2..n + 1)
+    <if sieve[i] == 1>
+      push(result, i)
+  return result
+
+(main)
+  primes = the [primes_up_to 100]
+  print "Found", len(primes), "primes up to 100:"
+  print primes

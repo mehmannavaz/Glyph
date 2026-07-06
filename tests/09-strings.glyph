@@ -1,0 +1,23 @@
+# tests/09-strings.glyph — string operations
+(main)
+  s = "Hello, " + "World" + "!"
+  print s
+  print "len =", len(s)
+  print "upper =", upper(s)
+  print "lower =", lower(s)
+  print "first char =", s[0]
+  print "last char =", s[len(s) - 1]
+
+  # string concatenation with numbers
+  n = 42
+  msg = "answer = " + string(n)
+  print msg
+
+  # compare strings
+  <if "abc" == "abc">
+    print "strings equal"
+  else
+    print "strings not equal"
+
+  <if "abc" < "abd">
+    print "abc < abd"

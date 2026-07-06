@@ -1,0 +1,9 @@
+Hello, World!
+len = 13
+upper = HELLO, WORLD!
+lower = hello, world!
+first char = H
+last char = !
+answer = 42
+strings equal
+abc < abd

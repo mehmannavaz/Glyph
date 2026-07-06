@@ -1,0 +1,37 @@
+# tests/21-ffi.glyph — test C FFI: call libc functions
+# Real, working FFI — no placeholders
+# Note: PID and pointer values vary, so we only check the deterministic results
+
+(main)
+  libc = dlopen("libc.so.6")
+  <if libc == ptr_null()>
+    print "FAIL: could not open libc"
+    exit(1)
+
+  # Call strlen("hello") — takes a string, returns int
+  n = ccall(libc, "strlen", ["hello"], "int")
+  print "strlen(\"hello\") =", n
+
+  # Call abs(-42) — takes int, returns int
+  a = ccall(libc, "abs", [-42], "int")
+  print "abs(-42) =", a
+
+  # Call strcmp("abc", "abc") — should be 0
+  r = ccall(libc, "strcmp", ["abc", "abc"], "int")
+  print "strcmp(\"abc\", \"abc\") =", r
+
+  # Call strcmp("abc", "abd") — should be non-zero (not equal)
+  r = ccall(libc, "strcmp", ["abc", "abd"], "int")
+  print "strcmp(\"abc\", \"abd\") != 0:", r != 0
+
+  # malloc + memset + read + free
+  buf = malloc(64)
+  memset(buf, 65, 10)
+  print "first byte after memset(65):", ptr_read_byte(buf, 0)
+  print "second byte:", ptr_read_byte(buf, 1)
+  free(buf)
+
+  # sizeof_ptr should be 8 on 64-bit
+  print "sizeof_ptr =", sizeof_ptr()
+
+  print "FFI test passed!"

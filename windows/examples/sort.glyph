@@ -1,0 +1,42 @@
+# examples/sort.glyph — bubble sort and binary search
+# Demonstrates arrays, nested loops, squire parameters
+
+[bubble_sort arr]
+  n = len(arr)
+  (for i in 0..n)
+    (for j in 0..n - i - 1)
+      <if arr[j] > arr[j + 1]>
+        tmp = arr[j]
+        arr[j] = arr[j + 1]
+        arr[j + 1] = tmp
+  return arr
+
+[binary_search arr target]
+  lo = 0
+  hi = len(arr) - 1
+  (loop)
+    <if lo > hi>
+      return -1
+    mid = (lo + hi) / 2
+    <if arr[mid] == target>
+      return mid
+    else
+      <if arr[mid] < target>
+        lo = mid + 1
+      else
+        hi = mid - 1
+
+(main)
+  data = [5, 2, 8, 1, 9, 3, 7, 4, 6]
+  print "before:", data
+  sorted = the [bubble_sort data]
+  print "after: ", sorted
+
+  (for i in 0..len(sorted))
+    target = sorted[i]
+    idx = the [binary_search sorted target]
+    print "  search for", target, "-> found at index", idx
+
+  # search for something not in array
+  idx = the [binary_search sorted 99]
+  print "  search for 99 -> index", idx, "(not found)"

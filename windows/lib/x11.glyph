@@ -1,0 +1,175 @@
+# lib/x11.glyph — X11 bindings for Glyph
+#
+# This module wraps the X11 C library using Glyph's FFI.
+# It provides a simple interface to X11 windows, graphics contexts,
+# events, and drawing primitives.
+
+# --- X11 constants ---
+X_Expose      = 12
+X_ButtonPress = 4
+X_ButtonRelease = 5
+X_KeyPress    = 2
+X_KeyRelease  = 3
+X_MotionNotify = 6
+X_ClientMessage = 33
+X_MapNotify   = 19
+
+X_Black = 0
+X_White = 16777215
+X_Red   = 16711680
+X_Green = 65280
+X_Blue  = 255
+X_Yellow = 16776960
+X_Cyan  = 65535
+X_Magenta = 16711935
+
+X_EVENT_SIZE = 256
+
+[x11_init]
+  lib = dlopen("libX11.so.6")
+  <if lib == ptr_null()>
+    print "ERROR: cannot load libX11.so.6"
+    exit(1)
+  display = ccall(lib, "XOpenDisplay", [ptr_null()], "ptr")
+  <if display == ptr_null()>
+    print "ERROR: cannot open X display"
+    exit(1)
+  screen = ccall(lib, "XDefaultScreen", [display], "int")
+  white = ccall(lib, "XWhitePixel", [display, screen], "int")
+  black = ccall(lib, "XBlackPixel", [display, screen], "int")
+  root = ccall(lib, "XDefaultRootWindow", [display], "int")
+  return [lib, display, screen, white, black, root]
+
+[x11_open title width height]
+  conn = the [x11_init]
+  lib = conn[0]
+  display = conn[1]
+  screen = conn[2]
+  white = conn[3]
+  black = conn[4]
+  root = conn[5]
+  win = ccall(lib, "XCreateSimpleWindow", [display, root, 0, 0, width, height, 0, black, white], "int")
+  mask = 32768 + 4 + 1
+  ccall(lib, "XSelectInput", [display, win, mask], "void")
+  ccall(lib, "XMapWindow", [display, win], "void")
+  gc = ccall(lib, "XCreateGC", [display, win, 0, ptr_null()], "ptr")
+  ccall(lib, "XStoreName", [display, win, title], "void")
+  ccall(lib, "XFlush", [display], "void")
+  return [lib, display, win, gc, width, height, black, white]
+
+[x11_color winobj rgb]
+  lib = winobj[0]
+  display = winobj[1]
+  color = malloc(32)
+  memset(color, 0, 32)
+  r = (rgb >> 16) & 255
+  g = (rgb >> 8) & 255
+  b = rgb & 255
+  r16 = r * 257
+  g16 = g * 257
+  b16 = b * 257
+  ptr_write(color, 8, r16)
+  ptr_write(color, 10, g16)
+  ptr_write(color, 12, b16)
+  screen = ccall(lib, "XDefaultScreen", [display], "int")
+  cmap = ccall(lib, "XDefaultColormap", [display, screen], "int")
+  ccall(lib, "XAllocColor", [display, cmap, color], "void")
+  pixel = ptr_read(color, 0)
+  free(color)
+  return pixel
+
+[x11_set_color winobj rgb]
+  lib = winobj[0]
+  display = winobj[1]
+  gc = winobj[3]
+  pixel = the [x11_color winobj rgb]
+  ccall(lib, "XSetForeground", [display, gc, pixel], "void")
+
+[x11_set_background winobj rgb]
+  lib = winobj[0]
+  display = winobj[1]
+  gc = winobj[3]
+  pixel = the [x11_color winobj rgb]
+  ccall(lib, "XSetBackground", [display, gc, pixel], "void")
+
+[x11_draw_text winobj x y text]
+  lib = winobj[0]
+  display = winobj[1]
+  win = winobj[2]
+  gc = winobj[3]
+  ccall(lib, "XDrawString", [display, win, gc, x, y, text, len(text)], "void")
+
+[x11_draw_line winobj x1 y1 x2 y2]
+  lib = winobj[0]
+  display = winobj[1]
+  win = winobj[2]
+  gc = winobj[3]
+  ccall(lib, "XDrawLine", [display, win, gc, x1, y1, x2, y2], "void")
+
+[x11_draw_rect winobj x y w h]
+  lib = winobj[0]
+  display = winobj[1]
+  win = winobj[2]
+  gc = winobj[3]
+  ccall(lib, "XDrawRectangle", [display, win, gc, x, y, w, h], "void")
+
+[x11_fill_rect winobj x y w h]
+  lib = winobj[0]
+  display = winobj[1]
+  win = winobj[2]
+  gc = winobj[3]
+  ccall(lib, "XFillRectangle", [display, win, gc, x, y, w, h], "void")
+
+[x11_clear winobj]
+  lib = winobj[0]
+  display = winobj[1]
+  win = winobj[2]
+  gc = winobj[3]
+  w = winobj[4]
+  h = winobj[5]
+  white = winobj[7]
+  ccall(lib, "XSetForeground", [display, gc, white], "void")
+  ccall(lib, "XFillRectangle", [display, win, gc, 0, 0, w, h], "void")
+
+[x11_flush winobj]
+  lib = winobj[0]
+  display = winobj[1]
+  ccall(lib, "XFlush", [display], "void")
+
+[x11_next_event winobj]
+  lib = winobj[0]
+  display = winobj[1]
+  ev = malloc(X_EVENT_SIZE)
+  memset(ev, 0, X_EVENT_SIZE)
+  ccall(lib, "XNextEvent", [display, ev], "void")
+  etype = ptr_read_int32(ev, 0)
+  x = 0
+  y = 0
+  <if etype == X_ButtonPress || etype == X_ButtonRelease || etype == X_MotionNotify>
+    x = ptr_read_int32(ev, 60)
+    y = ptr_read_int32(ev, 64)
+  key = 0
+  <if etype == X_KeyPress>
+    key = ptr_read_int32(ev, 68)
+  free(ev)
+  return [etype, x, y, key]
+
+[x11_main_loop winobj handler]
+  (loop)
+    ev = the [x11_next_event winobj]
+    etype = ev[0]
+    x = ev[1]
+    y = ev[2]
+    key = ev[3]
+    cont = the [handler etype x y key]
+    <if cont == 0>
+      stop
+
+[x11_close winobj]
+  lib = winobj[0]
+  display = winobj[1]
+  win = winobj[2]
+  gc = winobj[3]
+  ccall(lib, "XFreeGC", [display, gc], "void")
+  ccall(lib, "XDestroyWindow", [display, win], "void")
+  ccall(lib, "XCloseDisplay", [display], "void")

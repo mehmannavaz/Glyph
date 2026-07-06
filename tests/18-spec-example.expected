@@ -1,0 +1,10 @@
+=== running squire 3 times via loop ===
+squire ran, x = 2
+squire ran, x = 2
+squire ran, x = 2
+stopping loop after 3 runs
+=== triggering hexagon on div by zero ===
+!!! HEXAGON TRIGGER: division by zero caught
+x = 0
+=== guard with comparison ===
+loop ran more than 2 times

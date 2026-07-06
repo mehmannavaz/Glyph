@@ -1,0 +1,22 @@
+# examples/hanoi.glyph — Tower of Hanoi
+# Classic recursion problem
+
+[hanoi n from_ to_ via_]
+  <if n == 1>
+    print "  move disk 1 from " + from_ + " to " + to_
+    return 1
+  moves = 0
+  moves = moves + the [hanoi n - 1 from_ via_ to_]
+  print "  move disk " + string(n) + " from " + from_ + " to " + to_
+  moves = moves + 1
+  moves = moves + the [hanoi n - 1 via_ to_ from_]
+  return moves
+
+(main)
+  print "Tower of Hanoi with 3 disks:"
+  total = the [hanoi 3 "A" "C" "B"]
+  print "Total moves:", total
+  print ""
+  print "Tower of Hanoi with 5 disks:"
+  total = the [hanoi 5 "A" "C" "B"]
+  print "Total moves:", total

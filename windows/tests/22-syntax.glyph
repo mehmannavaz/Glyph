@@ -1,0 +1,53 @@
+# tests/22-syntax.glyph — test new syntax: elif, +=, -=, *=, /=
+
+[grade score]
+  <if score >= 90>
+    return "A"
+  elif score >= 80>
+    return "B"
+  elif score >= 70>
+    return "C"
+  elif score >= 60>
+    return "D"
+  else
+    return "F"
+
+(main)
+  # test elif chains
+  print the [grade 95]
+  print the [grade 85]
+  print the [grade 75]
+  print the [grade 65]
+  print the [grade 50]
+
+  # test compound assignment
+  x = 10
+  x += 5
+  print "10 += 5 =", x
+
+  x -= 3
+  print "15 -= 3 =", x
+
+  x *= 2
+  print "12 *= 2 =", x
+
+  x /= 4
+  print "24 /= 4 =", x
+
+  # compound assignment with string concatenation
+  s = "Hello"
+  s += ", World"
+  print s
+
+  # compound assignment in a loop
+  total = 0
+  (for i in 1..11)
+    total += i
+  print "sum 1..10 =", total
+
+  # compound assignment with array element (via temp var)
+  arr = [1, 2, 3]
+  tmp = arr[0]
+  tmp += 100
+  arr[0] = tmp
+  print "arr[0] += 100:", arr

@@ -1,0 +1,44 @@
+# tests/18-spec-example.glyph — the user's original example, working end-to-end
+#
+# From the spec:
+#   [squire]
+#     x = 1
+#     (loop)
+#       the [squire]
+#
+#   <if>
+#     if (loop) > 2
+#     # after run 3 times
+#
+#   {HEXAGON}
+#     TRIGER IF something happened like div by zero
+
+[squire]
+  x = 1
+  x = x + 1
+  print "squire ran, x =", x
+  return x
+
+{div_by_zero}
+  print "!!! HEXAGON TRIGGER: division by zero caught"
+  return 0
+
+(main)
+  print "=== running squire 3 times via loop ==="
+  count = 0
+  (loop)
+    count = count + 1
+    result = the [squire]
+    <if count > 2>
+      print "stopping loop after", count, "runs"
+      stop
+
+  print "=== triggering hexagon on div by zero ==="
+  x = 10 / 0
+  print "x =", x
+
+  print "=== guard with comparison ==="
+  <if count > 2>
+    print "loop ran more than 2 times"
+  else
+    print "loop ran 2 or fewer times"

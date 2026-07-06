@@ -1,0 +1,10 @@
+# tests/08-raise.glyph — user-defined trigger via `raise`
+
+{alarm}
+  print "*** ALARM FIRED ***"
+  return 0
+
+(main)
+  print "before raise"
+  raise alarm
+  print "after raise"

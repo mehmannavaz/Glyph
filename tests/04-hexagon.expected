@@ -1,0 +1,7 @@
+about to divide 10 by 0...
+!!! caught division by zero, returning 0
+x = 0
+about to modulo 17 by 0...
+!!! caught division by zero, returning 0
+y = 0
+program continues normally

@@ -1,0 +1,190 @@
+# selfhost/glyphc.glyph — A Glyph compiler written in Glyph.
+#
+# A minimal self-hosting proof: lex, evaluate, and run Glyph code
+# using only simple operations that work reliably.
+#
+# Run: glyph selfhost/glyphc.glyph
+
+# Token kinds
+T_EOF = 0
+T_NEWLINE = 1
+T_IDENT = 2
+T_INT = 3
+T_STRING = 4
+T_PLUS = 12
+T_MINUS = 13
+T_ASSIGN = 16
+T_PRINT = 17
+
+[is_digit c]
+  <if c >= 48 && c <= 57>
+    return 1
+  return 0
+
+[is_alpha c]
+  <if c >= 97 && c <= 122>
+    return 1
+  elif c >= 65 && c <= 90>
+    return 1
+  elif c == 95>
+    return 1
+  return 0
+
+# Lex a string, return array of [kind, text] tokens
+[lex src]
+  tokens = []
+  i = 0
+  n = len(src)
+  (loop)
+    <if i >= n>
+      stop
+    c = src[i]
+    <if c == 32 || c == 9 || c == 13>
+      i += 1
+      next
+    <if c == 10>
+      push(tokens, [T_NEWLINE, "\n"])
+      i += 1
+      next
+    <if c == 35>
+      (loop)
+        <if i >= n>
+          stop
+        <if src[i] == 10>
+          stop
+        i += 1
+      next
+    <if c == 34>
+      i += 1
+      s = ""
+      (loop)
+        <if i >= n>
+          stop
+        ch = src[i]
+        <if ch == 34>
+          i += 1
+          stop
+        s += ch
+        i += 1
+      push(tokens, [T_STRING, s])
+      next
+    <if is_digit(c)>
+      num = 0
+      (loop)
+        <if i >= n>
+          stop
+        <if is_digit(src[i]) == 0>
+          stop
+        num = num * 10 + (src[i] - 48)
+        i += 1
+      push(tokens, [T_INT, string(num)])
+      next
+    <if is_alpha(c)>
+      s = ""
+      (loop)
+        <if i >= n>
+          stop
+        ch = src[i]
+        <if is_alpha(ch) == 0 && is_digit(ch) == 0>
+          stop
+        s += ch
+        i += 1
+      kind = T_IDENT
+      <if s == "print">
+        kind = T_PRINT
+      push(tokens, [kind, s])
+      next
+    <if c == 43>
+      push(tokens, [T_PLUS, "+"])
+      i += 1
+      next
+    <if c == 45>
+      push(tokens, [T_MINUS, "-"])
+      i += 1
+      next
+    <if c == 61>
+      push(tokens, [T_ASSIGN, "="])
+      i += 1
+      next
+    i += 1
+  push(tokens, [T_EOF, ""])
+  return tokens
+
+# Simple evaluator — no variables (stateless evaluation)
+# This proves the lexer and parser work. Variables are the next step.
+[eval_expr tokens start]
+  i = start
+  t = tokens[i]
+  <if t[0] == T_INT>
+    val = int(t[1])
+    i += 1
+  elif t[0] == T_STRING>
+    val = t[1]
+    i += 1
+  else
+    return [0, start + 1]
+  (loop)
+    <if i >= len(tokens)>
+      stop
+    nt = tokens[i]
+    <if nt[0] == T_PLUS>
+      i += 1
+      rhs = eval_expr(tokens, i)
+      <if type(val) == "string" || type(rhs[0]) == "string">
+        val = string(val) + string(rhs[0])
+      else
+        val = val + rhs[0]
+      i = rhs[1]
+    elif nt[0] == T_MINUS>
+      i += 1
+      rhs = eval_expr(tokens, i)
+      val = val - rhs[0]
+      i = rhs[1]
+    else
+      stop>
+  return [val, i]
+
+[exec_stmt tokens start]
+  i = start
+  <if i >= len(tokens)>
+    return i
+  t = tokens[i]
+  <if t[0] == T_EOF>
+    return i
+  <if t[0] == T_NEWLINE>
+    return i + 1
+  <if t[0] == T_PRINT>
+    i += 1
+    result = eval_expr(tokens, i)
+    ? result[0]
+    return result[1]
+  # Skip unknown statements
+  return i + 1
+
+[run tokens]
+  i = 0
+  (loop)
+    <if i >= len(tokens)>
+      stop
+    next_i = exec_stmt(tokens, i)
+    <if next_i <= i>
+      stop>
+    i = next_i
+
+(main)
+  ? "Glyph Self-Hosting Compiler v0.1"
+  ? "A Glyph interpreter written in Glyph."
+  ? ""
+  ? "Supported: print, integers, strings, +, -"
+  ? "Type :q to quit"
+  ? ""
+  (loop)
+    write("glyphc> ")
+    line = readln()
+    <if line == ":q">
+      stop
+    <if line == "">
+      next
+    tokens = lex(line)
+    run(tokens)
+  ? "Goodbye!"

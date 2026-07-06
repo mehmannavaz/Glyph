@@ -1,0 +1,36 @@
+# tests/24-repl.glyph — REPL features test (run as script, not actual REPL)
+# Tests that the same features work in both REPL and script mode
+
+(main)
+  # Test ? shorthand
+  ? "Hello from ? operator"
+  ? "math:", 2 + 3, "*", 4
+
+  # Test interpolation
+  name = "Glyph"
+  version = "0.2.0"
+  ? "Language: #{name} v#{version}"
+
+  # Test interpolation with complex expressions
+  nums = [3, 1, 4, 1, 5, 9, 2, 6]
+  ? "nums = #{nums}"
+  ? "len = #{len(nums)}"
+  total = 0
+  (for i in 0..len(nums))
+    total += nums[i]
+  ? "sum = #{total}"
+
+  # Test auto-conversion in +
+  ? "int + string: " + 42 + " and " + 3.14
+  ? "array: " + [1, 2, 3]
+
+  # Test interpolation in nested squire
+  [greet n]
+    return "Hello, #{n}!"
+  ? the [greet "World"]
+  ? the [greet "Glyph"]
+
+  # Test ? with single expression
+  x = 100
+  ? x / 4
+  ? x % 7

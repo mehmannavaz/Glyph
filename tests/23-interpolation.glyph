@@ -1,0 +1,41 @@
+# tests/23-interpolation.glyph — string interpolation and ? shorthand
+# The two biggest developer simplifications: #{expr} and ? expr
+
+(main)
+  name = "World"
+  x = 42
+  pi = 3.14
+
+  # Old way (verbose):
+  print "Hello, " + name + "! x = " + string(x)
+
+  # New way with interpolation:
+  print "Hello, #{name}! x = #{x} pi = #{pi}"
+
+  # ? shorthand for print:
+  ? "Using ? shorthand"
+  ? "x = #{x}, name = #{name}"
+
+  # ? with multiple args:
+  ? "multiple", "values", x, name
+
+  # Interpolation with expressions:
+  a = 10
+  b = 20
+  ? "#{a} + #{b} = #{a + b}"
+  ? "2^10 = #{2 ^ 10}"
+  ? "len(name) = #{len(name)}"
+
+  # Interpolation with array access:
+  arr = [1, 2, 3, 4, 5]
+  ? "arr = #{arr}"
+  ? "arr[0] = #{arr[0]}, arr[4] = #{arr[4]}"
+
+  # Interpolation in a loop:
+  (for i in 0..5)
+    ? "iteration #{i}: square = #{i * i}"
+
+  # Auto-conversion in + (no string() needed):
+  ? "count = " + 42
+  ? "price = $" + 9.99
+  ? "flag = " + true

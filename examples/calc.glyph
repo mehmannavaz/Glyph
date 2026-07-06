@@ -1,0 +1,74 @@
+# examples/calc.glyph — a simple interactive calculator
+# Reads expressions from stdin, one per line.
+# Supports: + - * / % on integers.
+
+{div_by_zero}
+  print "  error: division by zero"
+  return 0
+
+[evaluate a op b]
+  <if op == "+">
+    return a + b
+  else
+    <if op == "-">
+      return a - b
+    else
+      <if op == "*">
+        return a * b
+      else
+        <if op == "/">
+          return a / b
+        else
+          <if op == "%">
+            return a % b
+          else
+            print "  unknown operator:", op
+            return 0
+
+(main)
+  print "Glyph Calculator"
+  print "Enter: NUMBER OP NUMBER (e.g. 5 + 3). Blank line to quit."
+  print ""
+  (loop)
+    write "> "
+    line = readln()
+    <if line == "">
+      stop
+
+    # parse: number, op, number (space-separated)
+    # find first space
+    sp1 = -1
+    (for i in 0..len(line))
+      <if line[i] == " ">
+        sp1 = i
+        stop
+
+    <if sp1 == -1>
+      print "  usage: NUMBER OP NUMBER"
+      next
+
+    # find second space
+    sp2 = -1
+    (for i in sp1 + 1..len(line))
+      <if line[i] == " ">
+        sp2 = i
+        stop
+
+    <if sp2 == -1>
+      print "  usage: NUMBER OP NUMBER"
+      next
+
+    # extract parts
+    a_str = ""
+    (for i in 0..sp1)
+      a_str = a_str + line[i]
+    op = line[sp1 + 1]
+    b_str = ""
+    (for i in sp2 + 1..len(line))
+      b_str = b_str + line[i]
+
+    a = int(a_str)
+    b = int(b_str)
+
+    result = the [evaluate a op b]
+    print "  =", result

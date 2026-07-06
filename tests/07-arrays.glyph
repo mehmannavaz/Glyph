@@ -1,0 +1,19 @@
+# tests/07-arrays.glyph — array operations
+
+(main)
+  arr = range(1, 6)
+  print "len =", len(arr)
+  print "arr =", arr
+  (for i in 0..len(arr))
+    print "  arr[" + string(i) + "] =", arr[i]
+
+  push(arr, 100)
+  print "after push:", arr
+
+  # out-of-bounds with bound trigger
+  {bound}
+    print "!!! out-of-bounds, returning -1"
+    return -1
+
+  bad = arr[999]
+  print "bad =", bad

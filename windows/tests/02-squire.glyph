@@ -1,0 +1,16 @@
+# tests/02-squire.glyph — the squire block demo
+# Mirrors the user's spec example:
+#   [squire]
+#     x = 1
+#     (loop)
+#       the [squire]
+
+[squire]
+  x = 1
+  x = x + 1
+  print "x is", x
+  return x
+
+(main)
+  result = the [squire]
+  print "result was", result

@@ -1,0 +1,3 @@
+argc = 1
+argv = ["tests/15-argv.glyph"]
+  argv[0] = tests/15-argv.glyph

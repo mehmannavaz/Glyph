@@ -1,0 +1,12 @@
+26
+i=0 j=0 prod=0
+i=0 j=1 prod=0
+i=0 j=2 prod=0
+i=1 j=0 prod=0
+i=1 j=1 prod=1
+i=1 j=2 prod=2
+i=2 j=0 prod=0
+i=2 j=1 prod=2
+i=2 j=2 prod=4
+inner false (correct)
+sum of evens 1..9 = 20

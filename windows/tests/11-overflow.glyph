@@ -1,0 +1,15 @@
+# tests/11-overflow.glyph — overflow trigger fires on huge multiplication
+{overflow}
+  print "!!! overflow detected, returning 0"
+  return 0
+
+(main)
+  # 2^62 * 2 should overflow int64 (2^63 > INT64_MAX)
+  big = 4611686018427387904
+  print "big =", big
+  huge = big * 2
+  print "huge =", huge
+
+  # addition overflow
+  huge2 = big + big + big
+  print "huge2 =", huge2

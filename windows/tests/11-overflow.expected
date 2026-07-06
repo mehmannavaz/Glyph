@@ -1,0 +1,5 @@
+big = 4611686018427387904
+!!! overflow detected, returning 0
+huge = 0
+!!! overflow detected, returning 0
+huge2 = 4611686018427387904

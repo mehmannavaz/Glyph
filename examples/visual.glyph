@@ -1,0 +1,134 @@
+# examples/visual.glyph — A real GUI program in pure Glyph
+#
+# Opens an X11 window, draws text and shapes, responds to mouse clicks.
+# The X11 bindings are inlined (no import) for reliability.
+#
+# Run: glyph examples/visual.glyph
+# Click in the window to draw. Press any key to quit.
+
+# --- X11 constants ---
+X_Expose = 12
+X_ButtonPress = 4
+X_KeyPress = 2
+
+# --- X11 bindings (inlined) ---
+
+[x11_open title width height]
+  lib = dlopen("libX11.so.6")
+  display = ccall(lib, "XOpenDisplay", [ptr_null()], "ptr")
+  screen = ccall(lib, "XDefaultScreen", [display], "int")
+  white = ccall(lib, "XWhitePixel", [display, screen], "int")
+  black = ccall(lib, "XBlackPixel", [display, screen], "int")
+  root = ccall(lib, "XDefaultRootWindow", [display], "int")
+  win = ccall(lib, "XCreateSimpleWindow", [display, root, 0, 0, width, height, 0, black, white], "int")
+  mask = 32768 + 4 + 1
+  ccall(lib, "XSelectInput", [display, win, mask], "void")
+  ccall(lib, "XMapWindow", [display, win], "void")
+  gc = ccall(lib, "XCreateGC", [display, win, 0, ptr_null()], "ptr")
+  ccall(lib, "XStoreName", [display, win, title], "void")
+  ccall(lib, "XFlush", [display], "void")
+  return [lib, display, win, gc, width, height, black, white]
+
+[x11_set_color w rgb]
+  lib = w[0]
+  display = w[1]
+  gc = w[3]
+  ccall(lib, "XSetForeground", [display, gc, rgb], "void")
+
+[x11_draw_text w x y text]
+  lib = w[0]
+  display = w[1]
+  win = w[2]
+  gc = w[3]
+  ccall(lib, "XDrawString", [display, win, gc, x, y, text, len(text)], "void")
+
+[x11_fill_rect w x y rw rh]
+  lib = w[0]
+  display = w[1]
+  win = w[2]
+  gc = w[3]
+  ccall(lib, "XFillRectangle", [display, win, gc, x, y, rw, rh], "void")
+
+[x11_clear w]
+  lib = w[0]
+  display = w[1]
+  win = w[2]
+  gc = w[3]
+  width = w[4]
+  height = w[5]
+  white = w[7]
+  ccall(lib, "XSetForeground", [display, gc, white], "void")
+  ccall(lib, "XFillRectangle", [display, win, gc, 0, 0, width, height], "void")
+
+[x11_flush w]
+  lib = w[0]
+  display = w[1]
+  ccall(lib, "XFlush", [display], "void")
+
+[x11_next_event w]
+  lib = w[0]
+  display = w[1]
+  ev = malloc(256)
+  memset(ev, 0, 256)
+  ccall(lib, "XNextEvent", [display, ev], "void")
+  etype = ptr_read_int32(ev, 0)
+  free(ev)
+  return [etype, 0, 0]
+
+[x11_close w]
+  lib = w[0]
+  display = w[1]
+  win = w[2]
+  gc = w[3]
+  ccall(lib, "XFreeGC", [display, gc], "void")
+  ccall(lib, "XDestroyWindow", [display, win], "void")
+  ccall(lib, "XCloseDisplay", [display], "void")
+
+# --- Drawing ---
+
+[draw_scene w clicks]
+  the [x11_clear w]
+  the [x11_set_color w 0]
+  the [x11_draw_text w 50 40 "GLYPH Visual Demo"]
+  the [x11_draw_text w 50 60 "Click to draw. Press any key to quit."]
+  the [x11_set_color w 16711680]
+  the [x11_fill_rect w 50 100 80 50]
+  the [x11_set_color w 65280]
+  the [x11_fill_rect w 140 100 80 50]
+  the [x11_set_color w 255]
+  the [x11_fill_rect w 230 100 80 50]
+  the [x11_set_color w 0]
+  the [x11_draw_text w 50 180 "Clicks: " + string(clicks)]
+  the [x11_flush w]
+
+# --- Event loop (in separate squire for reliability) ---
+
+[event_loop w]
+  clicks = 0
+  (loop)
+    ev = the [x11_next_event w]
+    etype = ev[0]
+
+    <if etype == X_Expose>
+      the [draw_scene w clicks]
+
+    elif etype == X_ButtonPress>
+      clicks += 1
+      the [x11_set_color w 255]
+      x = 50 + clicks * 10
+      the [x11_fill_rect w x 200 8 8]
+      the [x11_flush w]
+      print "click", clicks
+
+    elif etype == X_KeyPress>
+      print "key pressed, exiting..."
+      stop
+
+(main)
+  print "=== Glyph Visual Demo ==="
+  print "Opening X11 window..."
+  w = the [x11_open "Glyph Visual Demo" 400 300]
+  print "Window opened. Click to draw, press any key to quit."
+  the [event_loop w]
+  the [x11_close w]
+  print "Window closed. Goodbye!"

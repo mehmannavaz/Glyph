@@ -1,0 +1,46 @@
+# tests/20-nil-compare.glyph — nil comparison and truthiness
+(main)
+  x = nil
+  print "x == nil?", x == nil
+  print "x != nil?", x != nil
+  print "nil == nil?", nil == nil
+  print "nil != nil?", nil != nil
+
+  y = 0
+  print "0 == nil?", y == nil
+  print "0 != nil?", y != nil
+
+  z = ""
+  print "\"\" == nil?", z == nil
+
+  # truthiness
+  <if nil>
+    print "nil is truthy"
+  else
+    print "nil is falsy"
+
+  <if 0>
+    print "0 is truthy"
+  else
+    print "0 is falsy"
+
+  <if "">
+    print "empty string is truthy"
+  else
+    print "empty string is falsy"
+
+  <if "x">
+    print "non-empty string is truthy"
+  else
+    print "non-empty string is falsy"
+
+  # array truthiness
+  <if []>
+    print "empty array is truthy"
+  else
+    print "empty array is falsy"
+
+  <if [1]>
+    print "non-empty array is truthy"
+  else
+    print "non-empty array is falsy"

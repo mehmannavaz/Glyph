@@ -1,0 +1,32 @@
+# tests/19-array-literals.glyph — array literals and index assignment
+(main)
+  a = [1, 2, 3, 4, 5]
+  print "a =", a
+  print "len =", len(a)
+  print "a[0] =", a[0]
+  print "a[4] =", a[4]
+
+  # index assignment
+  a[0] = 99
+  a[2] = 77
+  print "after assign:", a
+
+  # nested arrays
+  matrix = [[1, 2], [3, 4], [5, 6]]
+  print "matrix =", matrix
+  print "matrix[1] =", matrix[1]
+  print "matrix[1][0] =", matrix[1][0]
+
+  # mixed types
+  mixed = [1, "two", 3.0, true, nil]
+  print "mixed =", mixed
+
+  # empty array
+  empty = []
+  print "empty =", empty, "len =", len(empty)
+
+  # modify nested (via temp var)
+  row0 = matrix[0]
+  row0[1] = 42
+  matrix[0] = row0
+  print "matrix[0][1] = 42 ->", matrix

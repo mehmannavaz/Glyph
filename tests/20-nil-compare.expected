@@ -1,0 +1,13 @@
+x == nil? 1
+x != nil? 0
+nil == nil? 1
+nil != nil? 0
+0 == nil? 0
+0 != nil? 1
+"" == nil? 0
+nil is falsy
+0 is falsy
+empty string is falsy
+non-empty string is truthy
+empty array is falsy
+non-empty array is truthy

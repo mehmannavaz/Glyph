@@ -1,0 +1,8 @@
+# tests/13-stdio.glyph — stdin/stdout
+(main)
+  write("What is your name? ")
+  name = readln()
+  print "Hello, " + name + "!"
+  write("Give me a number: ")
+  n = readint()
+  print "Double is", n * 2

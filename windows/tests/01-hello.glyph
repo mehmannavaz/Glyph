@@ -1,0 +1,10 @@
+# tests/01-hello.glyph — the canonical hello world
+# Run: glyph tests/01-hello.glyph
+# Expected output:
+#   Hello, World!
+
+[hello name]
+  print "Hello, " + name + "!"
+
+(main)
+  the [hello "World"]

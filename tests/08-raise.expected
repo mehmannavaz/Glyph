@@ -1,0 +1,3 @@
+before raise
+*** ALARM FIRED ***
+after raise

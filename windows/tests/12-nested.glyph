@@ -1,0 +1,27 @@
+# tests/12-nested.glyph — nested shapes, deep indentation
+[outer x]
+  [inner y]
+    return y * y
+  return the [inner x] + 1
+
+(main)
+  print the [outer 5]
+
+  # nested loops
+  (for i in 0..3)
+    (for j in 0..3)
+      print "i=" + string(i) + " j=" + string(j) + " prod=" + string(i * j)
+
+  # nested guards
+  <if true>
+    <if false>
+      print "inner true"
+    else
+      print "inner false (correct)"
+
+  # loop with guard inside
+  total = 0
+  (for i in 1..10)
+    <if i % 2 == 0>
+      total = total + i
+  print "sum of evens 1..9 =", total

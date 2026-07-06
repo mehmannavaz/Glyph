@@ -1,0 +1,15 @@
+# tests/04-hexagon.glyph — the hexagon trigger (div-by-zero recovery)
+# From the user's spec: "{HEXAGON} TRIGER IF something happened like div by zero"
+
+{div_by_zero}
+  print "!!! caught division by zero, returning 0"
+  return 0
+
+(main)
+  print "about to divide 10 by 0..."
+  x = 10 / 0
+  print "x =", x
+  print "about to modulo 17 by 0..."
+  y = 17 % 0
+  print "y =", y
+  print "program continues normally"

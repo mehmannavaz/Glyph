@@ -1,0 +1,23 @@
+# tests/03-loop.glyph — loop constructs
+# Counted, infinite, and for-range loops.
+
+(main)
+  print "counted:"
+  (3)
+    print "  iter", iter
+
+  print "for-range:"
+  (for i in 0..5)
+    print "  i =", i
+
+  print "for-range with step 2:"
+  (for i in 0..10, 2)
+    print "  i =", i
+
+  print "infinite with stop at 4:"
+  (loop)
+    print "  iter", iter
+    <if iter == 4>
+      stop
+    else
+      next

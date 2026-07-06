@@ -1,0 +1,7 @@
+# tests/15-argv.glyph — command-line arguments
+(main)
+  print "argc =", argc()
+  args = argv()
+  print "argv =", args
+  (for i in 0..len(args))
+    print "  argv[" + string(i) + "] =", args[i]
