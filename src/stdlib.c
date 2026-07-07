@@ -12,6 +12,8 @@
  *   6. Time (time_*)
  *   7. Process (proc_*)
  *   8. Functional (call, apply)
+ *   9. Regex (re_*) — POSIX extended regex
+ *  10. Type conversion (to_*)
  *
  * Every function is exposed via a getter that returns the native_fn
  * pointer, so interp.c (which owns the interp struct) can register
@@ -30,6 +32,7 @@
 #include <math.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <regex.h>
 
 /* Helper: argument validation */
 static int need_args(int argc, int n, const char *name) {
@@ -1462,6 +1465,462 @@ static value n_apply(int argc, value *argv) {
 }
 
 /* ================================================================== */
+/* REGEX — POSIX extended regex                                       */
+/* ================================================================== */
+
+/* re_match(str, pattern) -> int      1 if full match, 0 if not
+ * re_find(str, pattern) -> array     array of [match, start, end] or nil
+ * re_find_all(str, pattern) -> array  array of all matches
+ * re_replace(str, pattern, repl) -> string  replace first match
+ * re_replace_all(str, pattern, repl) -> string  replace all matches
+ * re_split(str, pattern) -> array    split on pattern
+ * re_groups(str, pattern) -> array   array of capture groups (or nil)
+ */
+
+static value n_re_match(int argc, value *argv) {
+    if (!need_args(argc, 2, "re_match")) return v_int(0);
+    const char *str = str_arg(&argv[0]);
+    const char *pat = str_arg(&argv[1]);
+    regex_t re;
+    if (regcomp(&re, pat, REG_EXTENDED | REG_NOSUB) != 0) {
+        g_set_error("re_match: invalid regex '%s'", pat);
+        return v_int(0);
+    }
+    int rc = regexec(&re, str, 0, NULL, 0);
+    regfree(&re);
+    return v_int(rc == 0 ? 1 : 0);
+}
+
+static value n_re_find(int argc, value *argv) {
+    if (!need_args(argc, 2, "re_find")) return v_nil();
+    const char *str = str_arg(&argv[0]);
+    const char *pat = str_arg(&argv[1]);
+    regex_t re;
+    if (regcomp(&re, pat, REG_EXTENDED) != 0) {
+        g_set_error("re_find: invalid regex '%s'", pat);
+        return v_nil();
+    }
+    regmatch_t match;
+    if (regexec(&re, str, 1, &match, 0) != 0) {
+        regfree(&re);
+        return v_nil();
+    }
+    value arr = v_arr();
+    varr *a = arr.as.arr;
+    a->cap = 3;
+    a->items = realloc(a->items, a->cap * sizeof(value));
+    /* the matched substring */
+    int start = match.rm_so;
+    int end = match.rm_eo;
+    size_t len = (size_t)(end - start);
+    char *buf = malloc(len + 1);
+    memcpy(buf, str + start, len);
+    buf[len] = '\0';
+    a->items[a->len++] = v_str_take(buf);
+    a->items[a->len++] = v_int((int64_t)start);
+    a->items[a->len++] = v_int((int64_t)end);
+    regfree(&re);
+    return arr;
+}
+
+static value n_re_find_all(int argc, value *argv) {
+    if (!need_args(argc, 2, "re_find_all")) return v_arr();
+    const char *str = str_arg(&argv[0]);
+    const char *pat = str_arg(&argv[1]);
+    regex_t re;
+    if (regcomp(&re, pat, REG_EXTENDED) != 0) {
+        g_set_error("re_find_all: invalid regex '%s'", pat);
+        return v_arr();
+    }
+    value arr = v_arr();
+    varr *a = arr.as.arr;
+    const char *p = str;
+    while (*p) {
+        regmatch_t match;
+        if (regexec(&re, p, 1, &match, 0) != 0) break;
+        int start = match.rm_so;
+        int end = match.rm_eo;
+        size_t len = (size_t)(end - start);
+        char *buf = malloc(len + 1);
+        memcpy(buf, p + start, len);
+        buf[len] = '\0';
+        if (a->len >= a->cap) {
+            a->cap = a->cap ? a->cap * 2 : 8;
+            a->items = realloc(a->items, a->cap * sizeof(value));
+        }
+        a->items[a->len++] = v_str_take(buf);
+        /* advance past match (or by 1 if empty match to avoid infinite loop) */
+        p += end;
+        if (end == 0) p++;
+    }
+    regfree(&re);
+    return arr;
+}
+
+static value n_re_replace(int argc, value *argv) {
+    if (!need_args(argc, 3, "re_replace")) return v_str("");
+    const char *str = str_arg(&argv[0]);
+    const char *pat = str_arg(&argv[1]);
+    const char *repl = str_arg(&argv[2]);
+    regex_t re;
+    if (regcomp(&re, pat, REG_EXTENDED) != 0) {
+        g_set_error("re_replace: invalid regex '%s'", pat);
+        return v_str("");
+    }
+    regmatch_t match;
+    if (regexec(&re, str, 1, &match, 0) != 0) {
+        regfree(&re);
+        return v_str(str);
+    }
+    sbuf sb; sbuf_init(&sb);
+    sbuf_putn(&sb, str, (size_t)match.rm_so);
+    sbuf_puts(&sb, repl);
+    sbuf_puts(&sb, str + match.rm_eo);
+    regfree(&re);
+    return v_str_take(sb.data ? sb.data : strdup(""));
+}
+
+static value n_re_replace_all(int argc, value *argv) {
+    if (!need_args(argc, 3, "re_replace_all")) return v_str("");
+    const char *str = str_arg(&argv[0]);
+    const char *pat = str_arg(&argv[1]);
+    const char *repl = str_arg(&argv[2]);
+    regex_t re;
+    if (regcomp(&re, pat, REG_EXTENDED) != 0) {
+        g_set_error("re_replace_all: invalid regex '%s'", pat);
+        return v_str("");
+    }
+    sbuf sb; sbuf_init(&sb);
+    const char *p = str;
+    while (*p) {
+        regmatch_t match;
+        if (regexec(&re, p, 1, &match, 0) != 0) {
+            sbuf_puts(&sb, p);
+            break;
+        }
+        sbuf_putn(&sb, p, (size_t)match.rm_so);
+        sbuf_puts(&sb, repl);
+        p += match.rm_eo;
+        if (match.rm_eo == 0) {
+            sbuf_putc(&sb, *p);
+            p++;
+        }
+    }
+    regfree(&re);
+    return v_str_take(sb.data ? sb.data : strdup(""));
+}
+
+static value n_re_split(int argc, value *argv) {
+    if (!need_args(argc, 2, "re_split")) return v_arr();
+    const char *str = str_arg(&argv[0]);
+    const char *pat = str_arg(&argv[1]);
+    regex_t re;
+    if (regcomp(&re, pat, REG_EXTENDED) != 0) {
+        g_set_error("re_split: invalid regex '%s'", pat);
+        return v_arr();
+    }
+    value arr = v_arr();
+    varr *a = arr.as.arr;
+    const char *p = str;
+    while (*p) {
+        regmatch_t match;
+        if (regexec(&re, p, 1, &match, 0) != 0) {
+            /* rest of string */
+            if (a->len >= a->cap) {
+                a->cap = a->cap ? a->cap * 2 : 8;
+                a->items = realloc(a->items, a->cap * sizeof(value));
+            }
+            a->items[a->len++] = v_str(p);
+            break;
+        }
+        if (match.rm_so > 0) {
+            size_t len = (size_t)match.rm_so;
+            char *buf = malloc(len + 1);
+            memcpy(buf, p, len);
+            buf[len] = '\0';
+            if (a->len >= a->cap) {
+                a->cap = a->cap ? a->cap * 2 : 8;
+                a->items = realloc(a->items, a->cap * sizeof(value));
+            }
+            a->items[a->len++] = v_str_take(buf);
+        }
+        p += match.rm_eo;
+        if (match.rm_eo == 0) {
+            /* empty match — add current char and advance */
+            char buf[2] = { *p, 0 };
+            if (a->len >= a->cap) {
+                a->cap = a->cap ? a->cap * 2 : 8;
+                a->items = realloc(a->items, a->cap * sizeof(value));
+            }
+            a->items[a->len++] = v_str(buf);
+            p++;
+        }
+        if (!*p) {
+            /* string ended with delimiter — add empty */
+            if (a->len >= a->cap) {
+                a->cap = a->cap ? a->cap * 2 : 8;
+                a->items = realloc(a->items, a->cap * sizeof(value));
+            }
+            a->items[a->len++] = v_str("");
+            break;
+        }
+    }
+    regfree(&re);
+    return arr;
+}
+
+static value n_re_groups(int argc, value *argv) {
+    if (!need_args(argc, 2, "re_groups")) return v_nil();
+    const char *str = str_arg(&argv[0]);
+    const char *pat = str_arg(&argv[1]);
+    regex_t re;
+    if (regcomp(&re, pat, REG_EXTENDED) != 0) {
+        g_set_error("re_groups: invalid regex '%s'", pat);
+        return v_nil();
+    }
+    /* We need to know how many groups the pattern has. regcomp doesn't
+     * tell us directly, so we try with increasing nmatch until we stop
+     * seeing new groups. Cap at 20 for safety. */
+    int nmatch = 20;
+    regmatch_t matches[20];
+    if (regexec(&re, str, (size_t)nmatch, matches, 0) != 0) {
+        regfree(&re);
+        return v_nil();
+    }
+    value arr = v_arr();
+    varr *a = arr.as.arr;
+    /* Skip matches[0] (the full match) — groups start at 1 */
+    for (int i = 1; i < nmatch; i++) {
+        if (matches[i].rm_so < 0) break;  /* no more groups */
+        size_t len = (size_t)(matches[i].rm_eo - matches[i].rm_so);
+        char *buf = malloc(len + 1);
+        memcpy(buf, str + matches[i].rm_so, len);
+        buf[len] = '\0';
+        if (a->len >= a->cap) {
+            a->cap = a->cap ? a->cap * 2 : 8;
+            a->items = realloc(a->items, a->cap * sizeof(value));
+        }
+        a->items[a->len++] = v_str_take(buf);
+    }
+    regfree(&re);
+    return arr;
+}
+
+/* ================================================================== */
+/* TYPE CONVERSION                                                    */
+/* ================================================================== */
+
+static value n_to_str(int argc, value *argv) {
+    if (!need_args(argc, 1, "to_str")) return v_str("");
+    char *s = v_to_string(&argv[0]);
+    value v = v_str(s);
+    free(s);
+    return v;
+}
+
+static value n_to_int(int argc, value *argv) {
+    if (!need_args(argc, 1, "to_int")) return v_int(0);
+    return v_int(to_int(&argv[0]));
+}
+
+static value n_to_float(int argc, value *argv) {
+    if (!need_args(argc, 1, "to_float")) return v_float(0);
+    return v_float(to_double(&argv[0]));
+}
+
+static value n_to_bool(int argc, value *argv) {
+    if (!need_args(argc, 1, "to_bool")) return v_int(0);
+    return v_truthy(&argv[0]);
+}
+
+static value n_to_array(int argc, value *argv) {
+    if (!need_args(argc, 1, "to_array")) return v_arr();
+    if (argv[0].kind == V_ARRAY) return v_clone(&argv[0]);
+    /* Wrap single value in an array */
+    value arr = v_arr();
+    varr *a = arr.as.arr;
+    a->cap = 1;
+    a->items = realloc(a->items, sizeof(value));
+    a->items[0] = v_clone(&argv[0]);
+    a->len = 1;
+    return arr;
+}
+
+static value n_to_dict(int argc, value *argv) {
+    if (!need_args(argc, 1, "to_dict")) return v_dict_value();
+    if (argv[0].kind == V_DICT) return v_clone(&argv[0]);
+    g_set_error("to_dict: cannot convert %s to dict", "value");
+    return v_dict_value();
+}
+
+/* ================================================================== */
+/* MORE MATH — number theory and geometry                             */
+/* ================================================================== */
+
+static int64_t igcd(int64_t a, int64_t b) {
+    if (a < 0) a = -a;
+    if (b < 0) b = -b;
+    while (b) { int64_t t = a % b; a = b; b = t; }
+    return a;
+}
+
+static value n_math_gcd(int argc, value *argv) {
+    if (!need_args(argc, 2, "math_gcd")) return v_int(0);
+    return v_int(igcd(to_int(&argv[0]), to_int(&argv[1])));
+}
+
+static value n_math_lcm(int argc, value *argv) {
+    if (!need_args(argc, 2, "math_lcm")) return v_int(0);
+    int64_t a = to_int(&argv[0]);
+    int64_t b = to_int(&argv[1]);
+    if (a == 0 || b == 0) return v_int(0);
+    int64_t g = igcd(a, b);
+    return v_int((a / g) * b);
+}
+
+static value n_math_fact(int argc, value *argv) {
+    if (!need_args(argc, 1, "math_fact")) return v_int(1);
+    int64_t n = to_int(&argv[0]);
+    if (n < 0) return v_int(1);
+    if (n > 20) {
+        g_set_error("math_fact: %ld! overflows int64", (long)n);
+        return v_int(-1);
+    }
+    int64_t r = 1;
+    for (int64_t i = 2; i <= n; i++) r *= i;
+    return v_int(r);
+}
+
+static value n_math_is_prime(int argc, value *argv) {
+    if (!need_args(argc, 1, "math_is_prime")) return v_int(0);
+    int64_t n = to_int(&argv[0]);
+    if (n < 2) return v_int(0);
+    if (n < 4) return v_int(1);
+    if (n % 2 == 0) return v_int(0);
+    for (int64_t i = 3; i * i <= n; i += 2) {
+        if (n % i == 0) return v_int(0);
+    }
+    return v_int(1);
+}
+
+static value n_math_hypot(int argc, value *argv) {
+    if (!need_args(argc, 2, "math_hypot")) return v_float(0);
+    return v_float(hypot(to_double(&argv[0]), to_double(&argv[1])));
+}
+
+static value n_math_deg2rad(int argc, value *argv) {
+    if (!need_args(argc, 1, "math_deg2rad")) return v_float(0);
+    return v_float(to_double(&argv[0]) * 3.14159265358979323846 / 180.0);
+}
+
+static value n_math_rad2deg(int argc, value *argv) {
+    if (!need_args(argc, 1, "math_rad2deg")) return v_float(0);
+    return v_float(to_double(&argv[0]) * 180.0 / 3.14159265358979323846);
+}
+
+static value n_math_comb(int argc, value *argv) {
+    if (!need_args(argc, 2, "math_comb")) return v_int(0);
+    int64_t n = to_int(&argv[0]);
+    int64_t k = to_int(&argv[1]);
+    if (k < 0 || k > n) return v_int(0);
+    if (k == 0 || k == n) return v_int(1);
+    if (k > n - k) k = n - k;  /* use smaller k */
+    int64_t r = 1;
+    for (int64_t i = 0; i < k; i++) {
+        r = r * (n - i) / (i + 1);
+    }
+    return v_int(r);
+}
+
+static value n_math_perm(int argc, value *argv) {
+    if (!need_args(argc, 2, "math_perm")) return v_int(0);
+    int64_t n = to_int(&argv[0]);
+    int64_t k = to_int(&argv[1]);
+    if (k < 0 || k > n) return v_int(0);
+    int64_t r = 1;
+    for (int64_t i = 0; i < k; i++) r *= (n - i);
+    return v_int(r);
+}
+
+/* ================================================================== */
+/* MORE STRINGS — padding, counting, charset ops                      */
+/* ================================================================== */
+
+static value n_str_pad_left(int argc, value *argv) {
+    if (!need_args(argc, 3, "str_pad_left")) return v_str("");
+    const char *s = str_arg(&argv[0]);
+    int64_t width = to_int(&argv[1]);
+    const char *pad = str_arg(&argv[2]);
+    size_t slen = strlen(s);
+    if ((int64_t)slen >= width || !pad[0]) return v_str(s);
+    size_t padlen = strlen(pad);
+    size_t total_pad = (size_t)(width - (int64_t)slen);
+    char *buf = malloc((size_t)width + 1);
+    size_t pos = 0;
+    while (pos < total_pad) {
+        buf[pos] = pad[pos % padlen];
+        pos++;
+    }
+    memcpy(buf + pos, s, slen);
+    buf[pos + slen] = '\0';
+    return v_str_take(buf);
+}
+
+static value n_str_pad_right(int argc, value *argv) {
+    if (!need_args(argc, 3, "str_pad_right")) return v_str("");
+    const char *s = str_arg(&argv[0]);
+    int64_t width = to_int(&argv[1]);
+    const char *pad = str_arg(&argv[2]);
+    size_t slen = strlen(s);
+    if ((int64_t)slen >= width || !pad[0]) return v_str(s);
+    size_t padlen = strlen(pad);
+    char *buf = malloc((size_t)width + 1);
+    memcpy(buf, s, slen);
+    size_t pos = slen;
+    while (pos < (size_t)width) {
+        buf[pos] = pad[(pos - slen) % padlen];
+        pos++;
+    }
+    buf[pos] = '\0';
+    return v_str_take(buf);
+}
+
+static value n_str_center(int argc, value *argv) {
+    if (!need_args(argc, 3, "str_center")) return v_str("");
+    const char *s = str_arg(&argv[0]);
+    int64_t width = to_int(&argv[1]);
+    const char *pad = str_arg(&argv[2]);
+    size_t slen = strlen(s);
+    if ((int64_t)slen >= width || !pad[0]) return v_str(s);
+    size_t total_pad = (size_t)width - slen;
+    size_t left = total_pad / 2;
+    size_t right = total_pad - left;
+    size_t padlen = strlen(pad);
+    char *buf = malloc((size_t)width + 1);
+    size_t pos = 0;
+    for (size_t i = 0; i < left; i++) { buf[pos++] = pad[i % padlen]; }
+    memcpy(buf + pos, s, slen); pos += slen;
+    for (size_t i = 0; i < right; i++) { buf[pos++] = pad[i % padlen]; }
+    buf[pos] = '\0';
+    return v_str_take(buf);
+}
+
+static value n_str_count(int argc, value *argv) {
+    if (!need_args(argc, 2, "str_count")) return v_int(0);
+    const char *s = str_arg(&argv[0]);
+    const char *sub = str_arg(&argv[1]);
+    size_t slen = strlen(sub);
+    if (slen == 0) return v_int(0);
+    int64_t count = 0;
+    const char *p = s;
+    while ((p = strstr(p, sub)) != NULL) {
+        count++;
+        p += slen;
+    }
+    return v_int(count);
+}
+
+/* ================================================================== */
 /* GETTERS — expose each native_fn to interp.c                        */
 /* ================================================================== */
 
@@ -1513,3 +1972,22 @@ GETTER(proc_cwd) GETTER(proc_chdir)
 GETTER(proc_fork) GETTER(proc_wait) GETTER(proc_wait_any) GETTER(proc_kill)
 
 GETTER(call) GETTER(apply)
+
+/* Regex */
+GETTER(re_match) GETTER(re_find) GETTER(re_find_all)
+GETTER(re_replace) GETTER(re_replace_all)
+GETTER(re_split) GETTER(re_groups)
+
+/* Type conversion */
+GETTER(to_str) GETTER(to_int) GETTER(to_float)
+GETTER(to_bool) GETTER(to_array) GETTER(to_dict)
+
+/* More math */
+GETTER(math_gcd) GETTER(math_lcm) GETTER(math_fact)
+GETTER(math_is_prime) GETTER(math_hypot)
+GETTER(math_deg2rad) GETTER(math_rad2deg)
+GETTER(math_comb) GETTER(math_perm)
+
+/* More strings */
+GETTER(str_pad_left) GETTER(str_pad_right)
+GETTER(str_center) GETTER(str_count)

@@ -1,0 +1,17 @@
+gcd(12, 8): 4
+gcd(17, 5): 1
+lcm(4, 6): 12
+fact(5): 120
+fact(10): 3628800
+is_prime(2): 1
+is_prime(17): 1
+is_prime(18): 0
+is_prime(97): 1
+is_prime(100): 0
+hypot(3, 4): 5.0
+deg2rad(180): 3.14159
+rad2deg(3.14159): 180
+comb(10, 3): 120
+comb(52, 5): 2598960
+perm(5, 2): 20
+perm(10, 3): 720

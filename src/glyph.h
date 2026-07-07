@@ -492,6 +492,40 @@ native_fn stdlib_proc_kill(void);
 native_fn stdlib_call(void);
 native_fn stdlib_apply(void);
 
+/* Regex */
+native_fn stdlib_re_match(void);
+native_fn stdlib_re_find(void);
+native_fn stdlib_re_find_all(void);
+native_fn stdlib_re_replace(void);
+native_fn stdlib_re_replace_all(void);
+native_fn stdlib_re_split(void);
+native_fn stdlib_re_groups(void);
+
+/* Type conversion */
+native_fn stdlib_to_str(void);
+native_fn stdlib_to_int(void);
+native_fn stdlib_to_float(void);
+native_fn stdlib_to_bool(void);
+native_fn stdlib_to_array(void);
+native_fn stdlib_to_dict(void);
+
+/* More math */
+native_fn stdlib_math_gcd(void);
+native_fn stdlib_math_lcm(void);
+native_fn stdlib_math_fact(void);
+native_fn stdlib_math_is_prime(void);
+native_fn stdlib_math_hypot(void);
+native_fn stdlib_math_deg2rad(void);
+native_fn stdlib_math_rad2deg(void);
+native_fn stdlib_math_comb(void);
+native_fn stdlib_math_perm(void);
+
+/* More strings */
+native_fn stdlib_str_pad_left(void);
+native_fn stdlib_str_pad_right(void);
+native_fn stdlib_str_center(void);
+native_fn stdlib_str_count(void);
+
 /* ------------------------------------------------------------------ */
 /* JSON (src/json.c)                                                  */
 /* ------------------------------------------------------------------ */

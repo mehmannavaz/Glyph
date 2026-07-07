@@ -1,0 +1,10 @@
+re_match: 1
+re_match_digits: 1
+re_match_email: 1
+re_find: ["wor", 6, 9]
+re_find_all: ["1", "2", "3", "4"]
+re_replace: hello Glyph
+re_replace_all: aXbXcX
+re_split: ["apple", "banana", "cherry"]
+re_groups: ["2026", "07", "06"]
+re_find_miss: nil

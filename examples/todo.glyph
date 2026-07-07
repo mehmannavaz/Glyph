@@ -1,0 +1,132 @@
+# examples/todo.glyph — a JSON-based todo list manager.
+#
+# Usage:
+#   glyph examples/todo.glyph add "Buy milk"
+#   glyph examples/todo.glyph add "Walk the dog"
+#   glyph examples/todo.glyph list
+#   glyph examples/todo.glyph done 1
+#   glyph examples/todo.glyph remove 0
+#   glyph examples/todo.glyph clear
+#
+# Data is stored in ~/.glyph-todo.json as a JSON array of dicts:
+#   [{"text": "Buy milk", "done": false}, ...]
+#
+# This is a real application written entirely in Glyph. It demonstrates:
+#   - File I/O (file_read_file, file_write_file)
+#   - JSON parse and stringify
+#   - Array operations (arr_push, arr_filter, arr_slice)
+#   - Dict operations (dict, dict_set, dict_get)
+#   - Command-line argument handling (argc, argv)
+#   - String formatting (str_format)
+
+[load_todos]
+  path = proc_env("HOME") + "/.glyph-todo.json"
+  <if file_exists(path) == 0>
+    return []
+  content = file_read_file(path)
+  <if content == "">
+    return []
+  return json_parse(content)
+
+[save_todos todos]
+  path = proc_env("HOME") + "/.glyph-todo.json"
+  file_write_file(path, json_stringify_pretty(todos))
+
+[cmd_add text]
+  todos = the [load_todos]
+  item = dict()
+  dict_set(item, "text", text)
+  dict_set(item, "done", 0)
+  arr_push(todos, item)
+  the [save_todos todos]
+  print "Added:", text
+
+[cmd_list]
+  todos = the [load_todos]
+  <if len(todos) == 0>
+    print "No todos. Add one with: glyph todo.glyph add \"task\""
+    return
+  print "  #  Status  Task"
+  print "  -  ------  ----"
+  (for i in 0..len(todos))
+    item = todos[i]
+    status = "[ ]"
+    <if dict_get(item, "done") == 1>
+      status = "[x]"
+    text = dict_get(item, "text")
+    print str_format("  %d  %s     %s", i, status, text)
+
+[cmd_done idx]
+  todos = the [load_todos]
+  <if idx < 0 || idx >= len(todos)>
+    print "Error: index out of range (0.." + string(len(todos) - 1) + ")"
+    return
+  item = todos[idx]
+  dict_set(item, "done", 1)
+  the [save_todos todos]
+  print "Done:", dict_get(item, "text")
+
+[cmd_remove idx]
+  todos = the [load_todos]
+  <if idx < 0 || idx >= len(todos)>
+    print "Error: index out of range"
+    return
+  item = todos[idx]
+  # Build new array without the item at idx
+  new_todos = []
+  (for i in 0..len(todos))
+    <if i != idx>
+      arr_push(new_todos, todos[i])
+  the [save_todos new_todos]
+  print "Removed:", dict_get(item, "text")
+
+[cmd_clear]
+  the [save_todos []]
+  print "Cleared all todos."
+
+(main)
+  <if argc() < 2>
+    print "Usage: glyph todo.glyph [add|list|done|remove|clear] [args]"
+    print ""
+    print "Commands:"
+    print "  add TEXT   Add a new todo item"
+    print "  list       List all todos"
+    print "  done N     Mark todo N as done"
+    print "  remove N   Remove todo N"
+    print "  clear      Remove all todos"
+    exit(0)
+
+  cmd = argv()[1]
+
+  <if cmd == "add">
+    <if argc() < 3>
+      print "Usage: glyph todo.glyph add TEXT"
+      exit(1)
+    the [cmd_add argv()[2]]
+
+  else
+    <if cmd == "list">
+      the [cmd_list]
+
+    else
+      <if cmd == "done">
+        <if argc() < 3>
+          print "Usage: glyph todo.glyph done N"
+          exit(1)
+        the [cmd_done int(argv()[2])]
+
+      else
+        <if cmd == "remove">
+          <if argc() < 3>
+            print "Usage: glyph todo.glyph remove N"
+            exit(1)
+          the [cmd_remove int(argv()[2])]
+
+        else
+          <if cmd == "clear">
+            the [cmd_clear]
+
+          else
+            print "Unknown command:", cmd
+            print "Commands: add, list, done, remove, clear"
+            exit(1)

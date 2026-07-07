@@ -1,0 +1,14 @@
+# tests/32-regex.glyph — regex operations
+# Run: glyph tests/32-regex.glyph
+
+(main)
+  print "re_match:", re_match("hello world", "world")
+  print "re_match_digits:", re_match("abc123", "[0-9]+")
+  print "re_match_email:", re_match("a@b.com", "^[a-z]+@[a-z]+\\.[a-z]+$")
+  print "re_find:", re_find("hello world", "wor")
+  print "re_find_all:", re_find_all("a1b2c3d4", "[0-9]")
+  print "re_replace:", re_replace("hello world", "world", "Glyph")
+  print "re_replace_all:", re_replace_all("a1b2c3", "[0-9]", "X")
+  print "re_split:", re_split("apple,banana,cherry", ",")
+  print "re_groups:", re_groups("2026-07-06", "([0-9]+)-([0-9]+)-([0-9]+)")
+  print "re_find_miss:", re_find("hello", "xyz")

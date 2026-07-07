@@ -1057,6 +1057,40 @@ void interp_install_builtins(interp *it) {
     env_set_local(it->globals, "call",  v_native(stdlib_call()));
     env_set_local(it->globals, "apply", v_native(stdlib_apply()));
 
+    /* Regex (POSIX extended) */
+    env_set_local(it->globals, "re_match",       v_native(stdlib_re_match()));
+    env_set_local(it->globals, "re_find",        v_native(stdlib_re_find()));
+    env_set_local(it->globals, "re_find_all",    v_native(stdlib_re_find_all()));
+    env_set_local(it->globals, "re_replace",     v_native(stdlib_re_replace()));
+    env_set_local(it->globals, "re_replace_all", v_native(stdlib_re_replace_all()));
+    env_set_local(it->globals, "re_split",       v_native(stdlib_re_split()));
+    env_set_local(it->globals, "re_groups",      v_native(stdlib_re_groups()));
+
+    /* Type conversion */
+    env_set_local(it->globals, "to_str",   v_native(stdlib_to_str()));
+    env_set_local(it->globals, "to_int",   v_native(stdlib_to_int()));
+    env_set_local(it->globals, "to_float", v_native(stdlib_to_float()));
+    env_set_local(it->globals, "to_bool",  v_native(stdlib_to_bool()));
+    env_set_local(it->globals, "to_array", v_native(stdlib_to_array()));
+    env_set_local(it->globals, "to_dict",  v_native(stdlib_to_dict()));
+
+    /* More math */
+    env_set_local(it->globals, "math_gcd",      v_native(stdlib_math_gcd()));
+    env_set_local(it->globals, "math_lcm",      v_native(stdlib_math_lcm()));
+    env_set_local(it->globals, "math_fact",     v_native(stdlib_math_fact()));
+    env_set_local(it->globals, "math_is_prime", v_native(stdlib_math_is_prime()));
+    env_set_local(it->globals, "math_hypot",    v_native(stdlib_math_hypot()));
+    env_set_local(it->globals, "math_deg2rad",  v_native(stdlib_math_deg2rad()));
+    env_set_local(it->globals, "math_rad2deg",  v_native(stdlib_math_rad2deg()));
+    env_set_local(it->globals, "math_comb",     v_native(stdlib_math_comb()));
+    env_set_local(it->globals, "math_perm",     v_native(stdlib_math_perm()));
+
+    /* More strings */
+    env_set_local(it->globals, "str_pad_left",  v_native(stdlib_str_pad_left()));
+    env_set_local(it->globals, "str_pad_right", v_native(stdlib_str_pad_right()));
+    env_set_local(it->globals, "str_center",    v_native(stdlib_str_center()));
+    env_set_local(it->globals, "str_count",     v_native(stdlib_str_count()));
+
     /* JSON */
     env_set_local(it->globals, "json_parse",           v_native(json_nb_parse()));
     env_set_local(it->globals, "json_stringify",       v_native(json_nb_stringify()));

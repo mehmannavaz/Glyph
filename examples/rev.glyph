@@ -1,0 +1,23 @@
+# examples/rev.glyph — reverse each line character by character.
+#
+# Usage: glyph examples/rev.glyph [FILE...]
+# If no files given, reads stdin.
+# Like Unix `rev`.
+
+(main)
+  <if argc() < 2>
+    (loop)
+      line = readln()
+      <if line == "">
+        stop
+      print str_reverse(line)
+  else
+    args = argv()
+    (for i in 1..argc())
+      path = args[i]
+      content = file_read_file(path)
+      lines = str_split(content, "\n")
+      (for j in 0..len(lines))
+        <if lines[j] == "">
+          next
+        print str_reverse(lines[j])

@@ -1,0 +1,40 @@
+# examples/tail.glyph — print last N lines of files.
+#
+# Usage: glyph examples/tail.glyph [-n N] [FILE...]
+# Default N is 10. If no files given, reads stdin.
+
+(main)
+  n = 10
+  start = 1
+  <if argc() >= 2>
+    <if argv()[1] == "-n">
+      n = int(argv()[2])
+      start = 3
+
+  <if argc() <= start>
+    # stdin — read all lines into array
+    all = []
+    (loop)
+      line = readln()
+      <if line == "">
+        stop
+      arr_push(all, line)
+    # print last n
+    total = len(all)
+    from = total - n
+    <if from < 0>
+      from = 0
+    (for i in from..total)
+      print all[i]
+  else
+    args = argv()
+    (for i in start..argc())
+      path = args[i]
+      content = file_read_file(path)
+      lines = str_split(content, "\n")
+      total = len(lines)
+      from = total - n
+      <if from < 0>
+        from = 0
+      (for j in from..total)
+        print lines[j]
